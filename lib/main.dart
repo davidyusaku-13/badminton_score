@@ -50,6 +50,7 @@ class _ScoreScreenState extends State<ScoreScreen> {
   Future<void> _beep() async {
     if (beepEnabled) {
       try {
+        await player.stop(); // Stop any existing playback first
         await player.play(AssetSource('beep.mp3'));
       } catch (e) {
         debugPrint('Error playing sound: $e');
