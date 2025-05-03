@@ -47,6 +47,12 @@ class _ScoreScreenState extends State<ScoreScreen> {
 
   final AudioPlayer player = AudioPlayer();
 
+  @override
+  void initState() {
+    super.initState();
+    player.setSource(AssetSource('beep.mp3'));
+  }
+
   Future<void> _beep() async {
     if (beepEnabled) {
       try {
@@ -182,8 +188,11 @@ class _ScoreScreenState extends State<ScoreScreen> {
     );
   }
 
-  Widget _buildScoreButton(
-      {required int score, required VoidCallback onTap, required Color color}) {
+  Widget _buildScoreButton({
+    required int score,
+    required VoidCallback onTap,
+    required Color color,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
