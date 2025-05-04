@@ -1,7 +1,6 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:soundpool/soundpool.dart';
-import 'package:flutter/services.dart'; // for rootBundle
 
 // App colors
 const Color backgroundDark = Color(0xFF121212);
@@ -46,34 +45,26 @@ class _ScoreScreenState extends State<ScoreScreen> {
   int rightScore = 0;
   bool beepEnabled = true;
 
-  final Soundpool _soundpool = Soundpool(streamType: StreamType.notification);
-  int? _beepSoundId;
-  int? _currentStreamId;
+  late AudioPlayer _player;
+  late final Source _beepSource;
 
   @override
   void initState() {
     super.initState();
-    _loadBeep();
-  }
-
-  Future<void> _loadBeep() async {
-    final soundData = await rootBundle.load('assets/beep.mp3');
-    _beepSoundId = await _soundpool.load(soundData);
+    _player = AudioPlayer()..setReleaseMode(ReleaseMode.stop);
+    _beepSource = AssetSource('beep.mp3');
   }
 
   Future<void> _beep() async {
-    if (beepEnabled && _beepSoundId != null) {
-      // Stop previous sound (if any)
-      if (_currentStreamId != null) {
-        await _soundpool.stop(_currentStreamId!);
-      }
-      _currentStreamId = await _soundpool.play(_beepSoundId!);
+    if (beepEnabled) {
+      await _player.stop(); // stop any previous sound
+      await _player.play(_beepSource);
     }
   }
 
   @override
   void dispose() {
-    _soundpool.release();
+    _player.dispose();
     super.dispose();
   }
 
