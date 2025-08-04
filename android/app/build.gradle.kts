@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.example.badminton_score"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // ndkVersion = flutter.ndkVersion // Commented out - not needed for this app
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
