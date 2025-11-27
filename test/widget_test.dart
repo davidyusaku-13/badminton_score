@@ -22,10 +22,9 @@ void main() {
     // Tap on the left score area and trigger a frame.
     await tester.tap(find.byWidgetPredicate(
       (Widget widget) =>
-          widget is GestureDetector &&
-          widget.child is Container &&
-          (widget.child as Container).color == team1Color,
-    ));
+          widget is Material &&
+          widget.child is InkWell,
+    ).first);
     await tester.pump();
 
     // Verify that our counter has incremented.

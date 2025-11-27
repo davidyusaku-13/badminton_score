@@ -7,7 +7,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 class AppConstants {
   static const int scoreSectionFlex = 75;
   static const int controlSectionFlex = 25;
-  static const double scoreTextSize = 220;
+  static const double scoreTextSize = 256;
   static const double controlTextSize = 50;
   static const double buttonTextSize = 30;
   static const EdgeInsets gridPadding =
@@ -17,11 +17,6 @@ class AppConstants {
 class ThemeKeys {
   static const String dark = 'dark';
   static const String light = 'light';
-  static const String sunset = 'sunset';
-  static const String forest = 'forest';
-  static const String ocean = 'ocean';
-  static const String neon = 'neon';
-  static const String minimal = 'minimal';
   static const String defaultTheme = dark;
 }
 
@@ -30,65 +25,20 @@ class AppThemes {
     'dark': ThemeColors(
       name: 'Dark',
       background: const Color(0xFF121212),
-      primary: const Color(0xFF7C4DFF), // Brighter Purple
-      secondary: const Color(0xFF00E5FF), // Bright Cyan
+      primary: const Color(0xFFFF8A50), // Orange primary
+      secondary: const Color(0xFFFFB74D), // Light orange secondary
       surface: const Color(0xFF2A2A2A),
       onSurface: Colors.white,
-      accent: const Color(0xFFE91E63), // Pink accent
+      accent: const Color(0xFFFF6D00), // Deep orange accent
     ),
     'light': ThemeColors(
       name: 'Light',
       background: const Color(0xFFFAFAFA),
-      primary: const Color(0xFF6200EE), // Material Purple
-      secondary: const Color(0xFF00695C), // Dark Teal
+      primary: const Color(0xFFFF8A50), // Orange primary
+      secondary: const Color(0xFFFFB74D), // Light orange secondary
       surface: const Color(0xFFE0E0E0),
       onSurface: const Color(0xFF000000),
-      accent: const Color(0xFFD32F2F), // Red accent
-    ),
-    'sunset': ThemeColors(
-      name: 'Sunset',
-      background: const Color(0xFF1A0E3D),
-      primary: const Color(0xFFFF7043), // Bright Orange
-      secondary: const Color(0xFFFFD54F), // Bright Yellow
-      surface: const Color(0xFF4A2C7A),
-      onSurface: Colors.white,
-      accent: const Color(0xFFFF5722), // Deep Orange
-    ),
-    'forest': ThemeColors(
-      name: 'Forest',
-      background: const Color(0xFF0D2818),
-      primary: const Color(0xFF66BB6A), // Bright Green
-      secondary: const Color(0xFF42A5F5), // Bright Blue
-      surface: const Color(0xFF1B4332),
-      onSurface: Colors.white,
-      accent: const Color(0xFF8BC34A), // Light Green
-    ),
-    'ocean': ThemeColors(
-      name: 'Ocean',
-      background: const Color(0xFF001122),
-      primary: const Color(0xFF00BCD4), // Bright Cyan
-      secondary: const Color(0xFF2196F3), // Bright Blue
-      surface: const Color(0xFF0D47A1),
-      onSurface: Colors.white,
-      accent: const Color(0xFF03DAC6), // Teal accent
-    ),
-    'neon': ThemeColors(
-      name: 'Neon',
-      background: const Color(0xFF000000),
-      primary: const Color(0xFF003300), // Medium dark green
-      secondary: const Color(0xFF330033), // Medium dark magenta
-      surface: const Color(0xFF1A1A1A),
-      onSurface: const Color(0xFF00FF41), // Bright neon green text
-      accent: const Color(0xFF003366), // Medium dark blue
-    ),
-    'minimal': ThemeColors(
-      name: 'Minimal',
-      background: const Color(0xFFFFFFFF),
-      primary: const Color(0xFF212121), // Dark Grey button
-      secondary: const Color(0xFF424242), // Medium Grey button
-      surface: const Color(0xFFF5F5F5),
-      onSurface: Colors.white, // WHITE TEXT on colored buttons!
-      accent: const Color(0xFF1976D2), // Blue accent
+      accent: const Color(0xFFFF6D00), // Deep orange accent
     ),
   };
 }
@@ -590,7 +540,7 @@ class _ScoreScreenState extends State<ScoreScreen> {
       return OutlinedButton(
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
-          backgroundColor: color.withOpacity(0.1),
+          backgroundColor: color.withValues(alpha: 0.1),
           side: BorderSide(color: color, width: 2),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
