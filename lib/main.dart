@@ -22,6 +22,13 @@ class AppConstants {
 
   // Undo history limit
   static const int maxUndoHistory = 10;
+
+  // Gesture thresholds
+  static const double minSwipeVelocity = 500;
+
+  // UI thresholds
+  static const int highScoreThreshold = 10;
+  static const double controlButtonHeight = 56;
 }
 
 class ThemeKeys {
@@ -173,6 +180,7 @@ class _BadmintonScoreAppState extends State<BadmintonScoreApp> {
       });
     } catch (e) {
       // If loading fails, use default theme
+      debugPrint('Theme loading failed: $e');
       setState(() {
         currentTheme = ThemeKeys.defaultTheme;
         _isLoading = false;
@@ -189,6 +197,7 @@ class _BadmintonScoreAppState extends State<BadmintonScoreApp> {
       });
     } catch (e) {
       // If saving fails, still update UI
+      debugPrint('Theme save failed: $e');
       setState(() {
         currentTheme = themeName;
       });
@@ -289,6 +298,7 @@ class _ScoreScreenState extends State<ScoreScreen>
     } catch (e) {
       // If audio preloading fails, continue without audio
       // Audio will still be attempted on first play
+      debugPrint('Audio preload failed: $e');
     }
   }
 
@@ -304,6 +314,7 @@ class _ScoreScreenState extends State<ScoreScreen>
       });
     } catch (e) {
       // If loading fails, use default values
+      debugPrint('Preferences loading failed: $e');
       setState(() {
         soundEnabled = true;
         targetScore = AppConstants.defaultTargetScore;
@@ -323,6 +334,7 @@ class _ScoreScreenState extends State<ScoreScreen>
     } catch (e) {
       // If saving fails, continue silently
       // User preferences will still work for current session
+      debugPrint('Preferences save failed: $e');
     }
   }
 
@@ -333,6 +345,7 @@ class _ScoreScreenState extends State<ScoreScreen>
         await _player.play(_beepSource);
       } catch (e) {
         // If audio playback fails, continue silently
+        debugPrint('Audio playback failed: $e');
       }
     }
   }
@@ -342,6 +355,7 @@ class _ScoreScreenState extends State<ScoreScreen>
       await _player.stop();
     } catch (e) {
       // If stopping fails, continue silently
+      debugPrint('Audio stop failed: $e');
     }
   }
 
@@ -579,7 +593,7 @@ class _ScoreScreenState extends State<ScoreScreen>
 
   void _quickReset() {
     // Check if scores are high enough to warrant undo option
-    if (leftScore > 10 || rightScore > 10) {
+    if (leftScore > AppConstants.highScoreThreshold || rightScore > AppConstants.highScoreThreshold) {
       final previousLeft = leftScore;
       final previousRight = rightScore;
       final previousServerWasLeft = isLeftServing;
@@ -841,7 +855,7 @@ class _ScoreScreenState extends State<ScoreScreen>
         onPanEnd: (details) {
           final velocity = details.velocity.pixelsPerSecond;
           final isHorizontalSwipe = velocity.dx.abs() > velocity.dy.abs();
-          final isFastSwipe = velocity.dx.abs() > 500;
+          final isFastSwipe = velocity.dx.abs() > AppConstants.minSwipeVelocity;
 
           if (isHorizontalSwipe && isFastSwipe) {
             if (velocity.dx > 0) {
@@ -1017,7 +1031,7 @@ class _ScoreScreenState extends State<ScoreScreen>
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: SizedBox(
-                  height: 56,
+                  height: AppConstants.controlButtonHeight,
                   child: _buildControlButton(
                     text: "-",
                     onTap: () {
@@ -1035,7 +1049,7 @@ class _ScoreScreenState extends State<ScoreScreen>
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: SizedBox(
-                  height: 56,
+                  height: AppConstants.controlButtonHeight,
                   child: _buildControlButton(
                     text: "↩",
                     onTap: () {
@@ -1054,7 +1068,7 @@ class _ScoreScreenState extends State<ScoreScreen>
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: SizedBox(
-                  height: 56,
+                  height: AppConstants.controlButtonHeight,
                   child: _buildMenuButton(
                     color: theme.accent,
                     textColor: theme.onSurface,
@@ -1067,7 +1081,7 @@ class _ScoreScreenState extends State<ScoreScreen>
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: SizedBox(
-                  height: 56,
+                  height: AppConstants.controlButtonHeight,
                   child: _buildControlButton(
                     text: "⇄",
                     onTap: () {
@@ -1085,7 +1099,7 @@ class _ScoreScreenState extends State<ScoreScreen>
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: SizedBox(
-                  height: 56,
+                  height: AppConstants.controlButtonHeight,
                   child: _buildControlButton(
                     text: "-",
                     onTap: () {
