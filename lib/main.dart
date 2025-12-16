@@ -392,13 +392,13 @@ class _ScoreScreenState extends State<ScoreScreen>
           ),
           title: Column(
             children: [
-              Icon(
+              const Icon(
                 Icons.emoji_events,
                 color: Colors.amber,
                 size: 48,
               ),
-              SizedBox(height: 8),
-              Text(
+              const SizedBox(height: 8),
+              const Text(
                 "Game Won!",
                 style: TextStyle(
                   fontFamily: 'Poppins',
@@ -423,9 +423,9 @@ class _ScoreScreenState extends State<ScoreScreen>
                 ),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.white10,
                   borderRadius: BorderRadius.circular(12),
@@ -441,10 +441,10 @@ class _ScoreScreenState extends State<ScoreScreen>
                   textAlign: TextAlign.center,
                 ),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Text(
                 "First to $targetScore",
-                style: TextStyle(
+                style: const TextStyle(
                   fontFamily: 'Poppins',
                   color: Colors.white54,
                   fontSize: 14,
@@ -455,7 +455,7 @@ class _ScoreScreenState extends State<ScoreScreen>
           ),
           actions: [
             TextButton(
-              child: Text("Continue Match",
+              child: const Text("Continue Match",
                   style: TextStyle(fontFamily: 'Poppins', color: Colors.grey)),
               onPressed: () {
                 Navigator.of(context).pop();
@@ -469,7 +469,7 @@ class _ScoreScreenState extends State<ScoreScreen>
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Text("New Game",
+              child: const Text("New Game",
                   style: TextStyle(
                       fontFamily: 'Poppins', fontWeight: FontWeight.w600)),
               onPressed: () {
@@ -534,9 +534,6 @@ class _ScoreScreenState extends State<ScoreScreen>
     final currentScore = isLeft ? leftScore : rightScore;
     if (currentScore <= 0) return;
 
-    final previousScore = currentScore;
-    final previousServerWasLeft = isLeftServing;
-
     setState(() {
       if (isLeft) {
         leftScore--;
@@ -544,17 +541,7 @@ class _ScoreScreenState extends State<ScoreScreen>
         rightScore--;
       }
       totalPoints--;
-
-      // Add to undo history for decrement operations
-      _undoHistory.add(ScoreAction(
-        isLeft: isLeft,
-        previousScore: previousScore,
-        newScore: isLeft ? leftScore : rightScore,
-        previousServerWasLeft: previousServerWasLeft,
-      ));
-      if (_undoHistory.length > AppConstants.maxUndoHistory) {
-        _undoHistory.removeAt(0);
-      }
+      // Note: Decrements are manual corrections, not tracked in undo history
     });
   }
 
@@ -568,7 +555,8 @@ class _ScoreScreenState extends State<ScoreScreen>
       } else {
         rightScore = lastAction.previousScore;
       }
-      totalPoints--;
+      // Recalculate totalPoints from current scores
+      totalPoints = leftScore + rightScore;
       isLeftServing = lastAction.previousServerWasLeft;
     });
     HapticFeedback.lightImpact();
@@ -610,8 +598,8 @@ class _ScoreScreenState extends State<ScoreScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content:
-              Text('Scores reset', style: TextStyle(fontFamily: 'Poppins')),
-          duration: Duration(seconds: 4),
+              const Text('Scores reset', style: TextStyle(fontFamily: 'Poppins')),
+          duration: const Duration(seconds: 4),
           action: SnackBarAction(
             label: 'UNDO',
             onPressed: () {
@@ -783,7 +771,7 @@ class _ScoreScreenState extends State<ScoreScreen>
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
-                      SizedBox(width: 4),
+                      const SizedBox(width: 4),
                       Container(
                         width: 20,
                         height: 20,
@@ -792,7 +780,7 @@ class _ScoreScreenState extends State<ScoreScreen>
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
-                      SizedBox(width: 4),
+                      const SizedBox(width: 4),
                       Container(
                         width: 20,
                         height: 20,
@@ -1272,8 +1260,6 @@ class _ScoreScreenState extends State<ScoreScreen>
               child:
                   const Text("Cancel", style: TextStyle(fontFamily: 'Poppins')),
               onPressed: () {
-                leftController.dispose();
-                rightController.dispose();
                 Navigator.of(context).pop();
               },
             ),
@@ -1290,16 +1276,14 @@ class _ScoreScreenState extends State<ScoreScreen>
                       newRightName.isEmpty ? 'Right' : newRightName;
                 });
                 _savePreferences();
-                leftController.dispose();
-                rightController.dispose();
                 Navigator.of(context).pop();
               },
             ),
           ],
         );
       },
-    ).then((_) {
-      // Ensure controllers are disposed even if dialog is dismissed by tapping outside
+    ).whenComplete(() {
+      // Guaranteed disposal regardless of how dialog is dismissed
       leftController.dispose();
       rightController.dispose();
     });
@@ -1337,7 +1321,7 @@ class _ScoreScreenState extends State<ScoreScreen>
                 decoration: InputDecoration(
                   labelText: 'Enter target score',
                   hintText: 'e.g., 21, 25, 31',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                   helperText: 'Minimum: ${AppConstants.minTargetScore}',
                 ),
                 style: const TextStyle(fontFamily: 'Poppins'),
@@ -1345,7 +1329,7 @@ class _ScoreScreenState extends State<ScoreScreen>
               const SizedBox(height: 8),
               Text(
                 'Win at target with 2-point lead, or sudden death at target + ${AppConstants.maxScoreOffset}',
-                style: TextStyle(
+                style: const TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 11,
                   color: Colors.grey,
@@ -1358,7 +1342,6 @@ class _ScoreScreenState extends State<ScoreScreen>
               child:
                   const Text("Cancel", style: TextStyle(fontFamily: 'Poppins')),
               onPressed: () {
-                controller.dispose();
                 Navigator.of(context).pop();
               },
             ),
@@ -1373,14 +1356,13 @@ class _ScoreScreenState extends State<ScoreScreen>
                     targetScore = newTarget;
                   });
                   _savePreferences();
-                  controller.dispose();
                   Navigator.of(context).pop();
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
                         'Target must be at least ${AppConstants.minTargetScore}',
-                        style: TextStyle(fontFamily: 'Poppins'),
+                        style: const TextStyle(fontFamily: 'Poppins'),
                       ),
                     ),
                   );
@@ -1390,8 +1372,8 @@ class _ScoreScreenState extends State<ScoreScreen>
           ],
         );
       },
-    ).then((_) {
-      // Ensure controller is disposed even if dialog is dismissed by tapping outside
+    ).whenComplete(() {
+      // Guaranteed disposal regardless of how dialog is dismissed
       controller.dispose();
     });
   }
