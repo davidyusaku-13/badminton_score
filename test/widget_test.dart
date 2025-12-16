@@ -51,14 +51,12 @@ void main() {
   group('Win Detection Logic', () {
     test('should win at targetScore + maxScoreOffset (sudden death)', () {
       // Win condition: score >= targetScore + maxScoreOffset
-      const targetScore = 21;
-      const maxScore = targetScore + AppConstants.maxScoreOffset; // 30
+      const maxScore = AppConstants.defaultTargetScore + AppConstants.maxScoreOffset; // 30
       expect(maxScore, 30);
     });
 
     test('should win at targetScore with minWinMargin', () {
       // Win condition: score >= targetScore && score - opponentScore >= minWinMargin
-      const targetScore = 21;
       const winningScore = 21;
       const losingScore = 19;
       expect(winningScore - losingScore, greaterThanOrEqualTo(AppConstants.minWinMargin));
