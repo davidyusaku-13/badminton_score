@@ -150,6 +150,7 @@ class BadmintonScoreApp extends StatefulWidget {
 class _BadmintonScoreAppState extends State<BadmintonScoreApp> {
   String currentTheme = ThemeKeys.defaultTheme;
   bool _isLoading = true;
+  SharedPreferences? _prefs;
 
   @override
   void initState() {
@@ -157,21 +158,41 @@ class _BadmintonScoreAppState extends State<BadmintonScoreApp> {
     _loadTheme();
   }
 
+  Future<SharedPreferences> _getPrefs() async {
+    _prefs ??= await SharedPreferences.getInstance();
+    return _prefs!;
+  }
+
   Future<void> _loadTheme() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedTheme = prefs.getString('theme') ?? ThemeKeys.defaultTheme;
-    setState(() {
-      currentTheme = savedTheme;
-      _isLoading = false;
-    });
+    try {
+      final prefs = await _getPrefs();
+      final savedTheme = prefs.getString('theme') ?? ThemeKeys.defaultTheme;
+      setState(() {
+        currentTheme = savedTheme;
+        _isLoading = false;
+      });
+    } catch (e) {
+      // If loading fails, use default theme
+      setState(() {
+        currentTheme = ThemeKeys.defaultTheme;
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> changeTheme(String themeName) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('theme', themeName);
-    setState(() {
-      currentTheme = themeName;
-    });
+    try {
+      final prefs = await _getPrefs();
+      await prefs.setString('theme', themeName);
+      setState(() {
+        currentTheme = themeName;
+      });
+    } catch (e) {
+      // If saving fails, still update UI
+      setState(() {
+        currentTheme = themeName;
+      });
+    }
   }
 
   @override
@@ -220,6 +241,8 @@ class _ScoreScreenState extends State<ScoreScreen>
   bool isLeftServing = true;
   int totalPoints = 0;
   int targetScore = AppConstants.defaultTargetScore;
+  String leftPlayerName = 'Left';
+  String rightPlayerName = 'Right';
 
   // Undo history
   final List<ScoreAction> _undoHistory = [];
@@ -232,6 +255,9 @@ class _ScoreScreenState extends State<ScoreScreen>
 
   late AudioPlayer _player;
   late final Source _beepSource;
+
+  // Cached SharedPreferences instance
+  SharedPreferences? _prefs;
 
   @override
   void initState() {
@@ -251,34 +277,72 @@ class _ScoreScreenState extends State<ScoreScreen>
     );
   }
 
+  Future<SharedPreferences> _getPrefs() async {
+    _prefs ??= await SharedPreferences.getInstance();
+    return _prefs!;
+  }
+
   Future<void> _preloadAudio() async {
-    // Preload the audio source to reduce first-play latency
-    await _player.setSource(_beepSource);
+    try {
+      // Preload the audio source to reduce first-play latency
+      await _player.setSource(_beepSource);
+    } catch (e) {
+      // If audio preloading fails, continue without audio
+      // Audio will still be attempted on first play
+    }
   }
 
   Future<void> _loadPreferences() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      soundEnabled = prefs.getBool('soundEnabled') ?? true;
-      targetScore = prefs.getInt('targetScore') ?? AppConstants.defaultTargetScore;
-    });
+    try {
+      final prefs = await _getPrefs();
+      setState(() {
+        soundEnabled = prefs.getBool('soundEnabled') ?? true;
+        targetScore =
+            prefs.getInt('targetScore') ?? AppConstants.defaultTargetScore;
+        leftPlayerName = prefs.getString('leftPlayerName') ?? 'Left';
+        rightPlayerName = prefs.getString('rightPlayerName') ?? 'Right';
+      });
+    } catch (e) {
+      // If loading fails, use default values
+      setState(() {
+        soundEnabled = true;
+        targetScore = AppConstants.defaultTargetScore;
+        leftPlayerName = 'Left';
+        rightPlayerName = 'Right';
+      });
+    }
   }
 
   Future<void> _savePreferences() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('soundEnabled', soundEnabled);
-    await prefs.setInt('targetScore', targetScore);
+    try {
+      final prefs = await _getPrefs();
+      await prefs.setBool('soundEnabled', soundEnabled);
+      await prefs.setInt('targetScore', targetScore);
+      await prefs.setString('leftPlayerName', leftPlayerName);
+      await prefs.setString('rightPlayerName', rightPlayerName);
+    } catch (e) {
+      // If saving fails, continue silently
+      // User preferences will still work for current session
+    }
   }
 
   Future<void> _beep() async {
     if (soundEnabled) {
-      await _player.stop();
-      await _player.play(_beepSource);
+      try {
+        await _player.stop();
+        await _player.play(_beepSource);
+      } catch (e) {
+        // If audio playback fails, continue silently
+      }
     }
   }
 
   Future<void> _stopSound() async {
-    await _player.stop();
+    try {
+      await _player.stop();
+    } catch (e) {
+      // If stopping fails, continue silently
+    }
   }
 
   void _safeAction(VoidCallback action) {
@@ -314,35 +378,68 @@ class _ScoreScreenState extends State<ScoreScreen>
   }
 
   void _showWinCelebration(bool isLeftWinner) {
-    final winner = isLeftWinner ? "Left" : "Right";
+    final winner = isLeftWinner ? leftPlayerName : rightPlayerName;
     HapticFeedback.heavyImpact();
 
     showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: true,
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: Colors.black87,
-          title: Text(
-            "Game Won!",
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              color: Colors.amber,
-              fontSize: 28,
-            ),
-            textAlign: TextAlign.center,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Column(
+            children: [
+              Icon(
+                Icons.emoji_events,
+                color: Colors.amber,
+                size: 48,
+              ),
+              SizedBox(height: 8),
+              Text(
+                "Game Won!",
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  color: Colors.amber,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                "$winner Player Wins!",
+                "$winner Wins!",
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   color: Colors.white,
                   fontSize: 24,
+                  fontWeight: FontWeight.w600,
                 ),
                 textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 12),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white10,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  "$leftScore - $rightScore",
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    color: Colors.white,
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ),
               SizedBox(height: 8),
               Text(
@@ -351,17 +448,6 @@ class _ScoreScreenState extends State<ScoreScreen>
                   fontFamily: 'Poppins',
                   color: Colors.white54,
                   fontSize: 14,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 16),
-              Text(
-                "$leftScore - $rightScore",
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  color: Colors.white70,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -375,10 +461,17 @@ class _ScoreScreenState extends State<ScoreScreen>
                 Navigator.of(context).pop();
               },
             ),
-            TextButton(
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber,
+                foregroundColor: Colors.black87,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
               child: Text("New Game",
-                  style:
-                      TextStyle(fontFamily: 'Poppins', color: Colors.amber)),
+                  style: TextStyle(
+                      fontFamily: 'Poppins', fontWeight: FontWeight.w600)),
               onPressed: () {
                 // Record game win
                 setState(() {
@@ -437,6 +530,34 @@ class _ScoreScreenState extends State<ScoreScreen>
     }
   }
 
+  void _decrementScore(bool isLeft) {
+    final currentScore = isLeft ? leftScore : rightScore;
+    if (currentScore <= 0) return;
+
+    final previousScore = currentScore;
+    final previousServerWasLeft = isLeftServing;
+
+    setState(() {
+      if (isLeft) {
+        leftScore--;
+      } else {
+        rightScore--;
+      }
+      totalPoints--;
+
+      // Add to undo history for decrement operations
+      _undoHistory.add(ScoreAction(
+        isLeft: isLeft,
+        previousScore: previousScore,
+        newScore: isLeft ? leftScore : rightScore,
+        previousServerWasLeft: previousServerWasLeft,
+      ));
+      if (_undoHistory.length > AppConstants.maxUndoHistory) {
+        _undoHistory.removeAt(0);
+      }
+    });
+  }
+
   void _undo() {
     if (_undoHistory.isEmpty) return;
 
@@ -474,6 +595,7 @@ class _ScoreScreenState extends State<ScoreScreen>
       final previousLeft = leftScore;
       final previousRight = rightScore;
       final previousServerWasLeft = isLeftServing;
+      final previousUndoHistory = List<ScoreAction>.from(_undoHistory);
 
       setState(() {
         leftScore = 0;
@@ -487,8 +609,8 @@ class _ScoreScreenState extends State<ScoreScreen>
       // Show snackbar with undo option
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Scores reset',
-              style: TextStyle(fontFamily: 'Poppins')),
+          content:
+              Text('Scores reset', style: TextStyle(fontFamily: 'Poppins')),
           duration: Duration(seconds: 4),
           action: SnackBarAction(
             label: 'UNDO',
@@ -498,6 +620,8 @@ class _ScoreScreenState extends State<ScoreScreen>
                 rightScore = previousRight;
                 totalPoints = previousLeft + previousRight;
                 isLeftServing = previousServerWasLeft;
+                _undoHistory.clear();
+                _undoHistory.addAll(previousUndoHistory);
               });
             },
           ),
@@ -524,8 +648,8 @@ class _ScoreScreenState extends State<ScoreScreen>
 
   void _previousTheme() {
     final currentIndex = AppThemes.themeKeys.indexOf(widget.currentTheme);
-    final previousIndex =
-        (currentIndex - 1 + AppThemes.themeKeys.length) % AppThemes.themeKeys.length;
+    final previousIndex = (currentIndex - 1 + AppThemes.themeKeys.length) %
+        AppThemes.themeKeys.length;
     widget.onThemeChange(AppThemes.themeKeys[previousIndex]);
     HapticFeedback.lightImpact();
   }
@@ -684,7 +808,8 @@ class _ScoreScreenState extends State<ScoreScreen>
                     entry.value.name,
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
                   trailing: isSelected
@@ -746,22 +871,40 @@ class _ScoreScreenState extends State<ScoreScreen>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Semantics(
-                    label: 'Left player games won: $leftGames',
-                    child: Text(
-                      "Games: $leftGames",
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: theme.onSurface.withValues(alpha: 0.7),
-                        fontFamily: 'Poppins',
+                  Expanded(
+                    child: Semantics(
+                      label: '$leftPlayerName games won: $leftGames',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            leftPlayerName,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: theme.onSurface.withValues(alpha: 0.9),
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            "Games: $leftGames",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.onSurface.withValues(alpha: 0.6),
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                   // Serving indicator and target score
                   Semantics(
                     label: isLeftServing
-                        ? 'Left player serving'
-                        : 'Right player serving',
+                        ? '$leftPlayerName serving'
+                        : '$rightPlayerName serving',
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -796,14 +939,32 @@ class _ScoreScreenState extends State<ScoreScreen>
                       ],
                     ),
                   ),
-                  Semantics(
-                    label: 'Right player games won: $rightGames',
-                    child: Text(
-                      "Games: $rightGames",
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: theme.onSurface.withValues(alpha: 0.7),
-                        fontFamily: 'Poppins',
+                  Expanded(
+                    child: Semantics(
+                      label: '$rightPlayerName games won: $rightGames',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            rightPlayerName,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: theme.onSurface.withValues(alpha: 0.9),
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            "Games: $rightGames",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.onSurface.withValues(alpha: 0.6),
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -872,14 +1033,7 @@ class _ScoreScreenState extends State<ScoreScreen>
                   child: _buildControlButton(
                     text: "-",
                     onTap: () {
-                      _safeAction(() {
-                        if (leftScore > 0) {
-                          setState(() {
-                            leftScore--;
-                            totalPoints--;
-                          });
-                        }
-                      });
+                      _safeAction(() => _decrementScore(true));
                     },
                     color: theme.surface,
                     textColor: theme.onSurface,
@@ -947,14 +1101,7 @@ class _ScoreScreenState extends State<ScoreScreen>
                   child: _buildControlButton(
                     text: "-",
                     onTap: () {
-                      _safeAction(() {
-                        if (rightScore > 0) {
-                          setState(() {
-                            rightScore--;
-                            totalPoints--;
-                          });
-                        }
-                      });
+                      _safeAction(() => _decrementScore(false));
                     },
                     color: theme.surface,
                     textColor: theme.onSurface,
@@ -978,6 +1125,17 @@ class _ScoreScreenState extends State<ScoreScreen>
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              ListTile(
+                leading: const Icon(Icons.person),
+                title: const Text("Player Names",
+                    style: TextStyle(fontFamily: 'Poppins')),
+                subtitle: Text("$leftPlayerName vs $rightPlayerName",
+                    style: TextStyle(fontFamily: 'Poppins', fontSize: 12)),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _showPlayerNamesDialog();
+                },
+              ),
               ListTile(
                 leading: const Icon(Icons.refresh),
                 title: const Text("Reset Score",
@@ -1054,6 +1212,99 @@ class _ScoreScreenState extends State<ScoreScreen>
     );
   }
 
+  void _showPlayerNamesDialog() {
+    final TextEditingController leftController = TextEditingController(
+      text: leftPlayerName,
+    );
+    final TextEditingController rightController = TextEditingController(
+      text: rightPlayerName,
+    );
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Player Names",
+              style: TextStyle(fontFamily: 'Poppins')),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Left Player",
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: leftController,
+                decoration: const InputDecoration(
+                  labelText: 'Enter name',
+                  hintText: 'e.g., John',
+                  border: OutlineInputBorder(),
+                ),
+                style: const TextStyle(fontFamily: 'Poppins'),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "Right Player",
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: rightController,
+                decoration: const InputDecoration(
+                  labelText: 'Enter name',
+                  hintText: 'e.g., Jane',
+                  border: OutlineInputBorder(),
+                ),
+                style: const TextStyle(fontFamily: 'Poppins'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child:
+                  const Text("Cancel", style: TextStyle(fontFamily: 'Poppins')),
+              onPressed: () {
+                leftController.dispose();
+                rightController.dispose();
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child:
+                  const Text("Save", style: TextStyle(fontFamily: 'Poppins')),
+              onPressed: () {
+                final newLeftName = leftController.text.trim();
+                final newRightName = rightController.text.trim();
+
+                setState(() {
+                  leftPlayerName = newLeftName.isEmpty ? 'Left' : newLeftName;
+                  rightPlayerName =
+                      newRightName.isEmpty ? 'Right' : newRightName;
+                });
+                _savePreferences();
+                leftController.dispose();
+                rightController.dispose();
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    ).then((_) {
+      // Ensure controllers are disposed even if dialog is dismissed by tapping outside
+      leftController.dispose();
+      rightController.dispose();
+    });
+  }
+
   void _showGameSettingsDialog() {
     final TextEditingController controller = TextEditingController(
       text: targetScore.toString(),
@@ -1104,20 +1355,25 @@ class _ScoreScreenState extends State<ScoreScreen>
           ),
           actions: [
             TextButton(
-              child: const Text("Cancel",
-                  style: TextStyle(fontFamily: 'Poppins')),
-              onPressed: () => Navigator.of(context).pop(),
+              child:
+                  const Text("Cancel", style: TextStyle(fontFamily: 'Poppins')),
+              onPressed: () {
+                controller.dispose();
+                Navigator.of(context).pop();
+              },
             ),
             TextButton(
-              child: const Text("Save",
-                  style: TextStyle(fontFamily: 'Poppins')),
+              child:
+                  const Text("Save", style: TextStyle(fontFamily: 'Poppins')),
               onPressed: () {
                 final newTarget = int.tryParse(controller.text);
-                if (newTarget != null && newTarget >= AppConstants.minTargetScore) {
+                if (newTarget != null &&
+                    newTarget >= AppConstants.minTargetScore) {
                   setState(() {
                     targetScore = newTarget;
                   });
                   _savePreferences();
+                  controller.dispose();
                   Navigator.of(context).pop();
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -1134,7 +1390,10 @@ class _ScoreScreenState extends State<ScoreScreen>
           ],
         );
       },
-    );
+    ).then((_) {
+      // Ensure controller is disposed even if dialog is dismissed by tapping outside
+      controller.dispose();
+    });
   }
 
   Widget _buildGridItem(Widget child) {

@@ -9,13 +9,13 @@ A professional Flutter badminton score keeper application designed for local com
 ## Architecture Summary
 
 ### Single-File Architecture (lib/main.dart)
-The entire application (~1120 lines) is contained in one well-organized file with clear separation of concerns:
+The entire application (~1264 lines) is contained in one well-organized file with clear separation of concerns:
 
 **Core Classes:**
-- `AppConstants` - UI dimensions, font sizes, layout constants, badminton rules (winningScore, maxScore, minWinMargin)
+- `AppConstants` - UI dimensions, font sizes, layout constants, badminton rules (minTargetScore, defaultTargetScore, maxScoreOffset, minWinMargin, maxUndoHistory)
 - `ThemeKeys` - String constants for theme names with default
 - `AppThemes` - Theme definitions with Material Design color schemes, cached `themeKeys` list
-- `ThemeColors` - Const data class for theme configuration
+- `ThemeColors` - Const data class for theme configuration (8 colors including gamePoint)
 - `ScoreAction` - Data class for undo history tracking
 - `BadmintonScoreApp` - Root widget managing global theme state with persistence
 - `ScoreScreen` - Main UI with modular widget architecture and animations
@@ -30,15 +30,16 @@ The entire application (~1120 lines) is contained in one well-organized file wit
 
 **Data Flow:**
 - Theme state held at `BadmintonScoreApp` level, persisted via `SharedPreferences`, passed to `ScoreScreen` via callbacks
-- Score state (`leftScore`, `rightScore`, `leftGames`, `rightGames`, `soundEnabled`, `isLeftServing`, `totalPoints`) managed locally in `_ScoreScreenState`
-- Undo history tracked via `List<ScoreAction>` with configurable max size
+- Score state (`leftScore`, `rightScore`, `leftGames`, `rightGames`, `soundEnabled`, `isLeftServing`, `totalPoints`, `targetScore`) managed locally in `_ScoreScreenState`
+- Undo history tracked via `List<ScoreAction>` with max 10 entries (AppConstants.maxUndoHistory)
+- Theme and game settings (soundEnabled, targetScore) persisted via `SharedPreferences`
 - Theme changes trigger parent rebuild via `widget.onThemeChange(themeName)` and persist to storage
 
 ## Key Features Implementation
 
 ### Theme System
-- **7 Themes**: Dark, Light, Sunset, Forest, Ocean, Neon, Minimal
-- **Theme Storage**: All themes defined as `const Map<String, ThemeColors>` with 6 consistent colors
+- **5 Themes**: Light, Minimal, Energy, Court, Champion
+- **Theme Storage**: All themes defined as `const Map<String, ThemeColors>` with 8 consistent colors (background, primary, secondary, surface, onSurface, accent, gamePoint)
 - **Cached Keys**: `AppThemes.themeKeys` cached list for performance (avoids allocations during swipes)
 - **Swipe Navigation**: Horizontal swipes (velocity > 500 px/s) on score area cycle through themes
 - **Persistence**: Theme choice saved to `SharedPreferences` and restored on app launch
@@ -47,17 +48,21 @@ The entire application (~1120 lines) is contained in one well-organized file wit
 ### Game Tracking
 - **Score Tracking**: Left and right scores with increment/decrement
 - **Games Won**: Tracks games won per side across a match
-- **Win Detection**: Automatic win detection at 21 points (2+ margin) or 30 points (sudden death)
-- **Win Celebration**: Modal dialog with haptic feedback, options to continue or start new game
-- **Serving Indicator**: Visual indicator showing which side should serve (changes every 2 points, every point at deuce)
+- **Configurable Target Score**: Users can set custom target scores (minimum 5, default 21) via Game Settings dialog
+- **Win Detection**: Automatic win detection at targetScore (2+ margin) or targetScore + 9 (sudden death cap)
+- **Win Celebration**: Modal dialog with haptic feedback, shows final score and target, options to continue or start new game
+- **Serving Indicator**: Visual indicator showing which side should serve (team that scores serves next - standard badminton rules)
+- **Game Point Indicator**: Score buttons change to `gamePoint` color with glow effect when one point away from winning
 
 ### Advanced Controls
 - **Tap Score Areas**: Increment with sound feedback and scale animation
 - **Minus Buttons**: Decrement scores (silent)
-- **Undo Button**: Reverts last score change (up to 10 actions tracked)
+- **Undo Button**: Reverts last score change (up to 10 actions tracked), disabled state when history is empty
 - **Swap Sides Button**: Swaps scores, games, and serving indicator (for court changes)
 - **Hamburger Menu**: Dual gesture - tap opens dialog, long press instant resets
+- **Reset Score**: Menu option to reset current game scores (with confirmation dialog)
 - **Reset Match**: Menu option to reset both scores and games won
+- **Game Settings**: Menu option to configure target score with validation (min 5)
 - **Sound Toggle**: Persisted to `SharedPreferences`
 - **Quick Reset Undo**: Snackbar with undo option when resetting high scores (>10)
 
@@ -193,18 +198,20 @@ The entire application (~1120 lines) is contained in one well-organized file wit
 
 ### Adding New Themes
 1. Add theme key to `ThemeKeys` class (optional - themes auto-enumerate from Map)
-2. Define all 6 colors in `AppThemes.themes`:
+2. Define all 8 colors in `AppThemes.themes`:
    ```dart
    'myNewTheme': ThemeColors(
      name: 'My Theme',
      background: Color(...), primary: Color(...), secondary: Color(...),
-     surface: Color(...), onSurface: Color(...), accent: Color(...)
+     surface: Color(...), onSurface: Color(...), accent: Color(...),
+     gamePoint: Color(...),
    ),
    ```
 3. Test contrast ratios for WCAG AA accessibility compliance
 
 ### Modifying UI Constants
 - Update `AppConstants` class values (scoreSectionFlex: 75, controlSectionFlex: 25, scoreTextSize: 256, etc.)
+- Badminton rules: minTargetScore (5), defaultTargetScore (21), maxScoreOffset (9), minWinMargin (2)
 - FittedBox will handle text scaling automatically
 - Test on different screen sizes after changes
 
@@ -224,8 +231,11 @@ The entire application (~1120 lines) is contained in one well-organized file wit
 Custom rules in `analysis_options.yaml`:
 - `avoid_print: false` - Print statements allowed for debugging
 - `prefer_const_constructors: false` - Not enforced to reduce boilerplate
+- `prefer_const_constructors_in_immutables: false` - Not enforced for widget constructors
+- `prefer_const_literals_to_create_immutables: false` - Not enforced to reduce boilerplate
 - `prefer_final_fields: false` - Mutable fields allowed
 - `unnecessary_breaks: true` - Enforces clean switch statements
+- `use_key_in_widget_constructors: false` - Keys not required for all widgets
 - Base rules from `package:flutter_lints/flutter.yaml`
 
 ## Commit Conventions
