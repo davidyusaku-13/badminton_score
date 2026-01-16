@@ -46,3 +46,5 @@ app.*.map.json
 
 # Distribution folder (built by CI/CD)
 /dist/
+.claude*
+_bmad*

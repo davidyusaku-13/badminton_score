@@ -314,6 +314,9 @@ class _ScoreScreenState extends State<ScoreScreen>
   String leftPlayerName = 'Left';
   String rightPlayerName = 'Right';
 
+  // Swipe hint state
+  bool _showSwipeHint = false;
+
   // Undo history
   final List<ScoreAction> _undoHistory = [];
 
@@ -322,6 +325,16 @@ class _ScoreScreenState extends State<ScoreScreen>
   late Animation<double> _scaleAnimation;
   bool _isLeftScaling = false;
   bool _isRightScaling = false;
+
+  // Score change animation controllers
+  late AnimationController _leftScoreController;
+  late AnimationController _rightScoreController;
+  late Animation<double> _leftScoreAnimation;
+  late Animation<double> _rightScoreAnimation;
+
+  // Game point pulse animation
+  late AnimationController _gamePointController;
+  late Animation<double> _gamePointAnimation;
 
   late AudioPlayer _player;
   late final Source _beepSource;
@@ -345,6 +358,35 @@ class _ScoreScreenState extends State<ScoreScreen>
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
       CurvedAnimation(parent: _scaleController, curve: Curves.easeInOut),
     );
+
+    // Setup score change animations
+    _leftScoreController = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _leftScoreAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
+      CurvedAnimation(parent: _leftScoreController, curve: Curves.easeOut),
+    );
+
+    _rightScoreController = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _rightScoreAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
+      CurvedAnimation(parent: _rightScoreController, curve: Curves.easeOut),
+    );
+
+    // Setup game point pulse animation
+    _gamePointController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+    _gamePointAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _gamePointController, curve: Curves.easeInOut),
+    );
+
+    // Check and show swipe hint if needed
+    _checkSwipeHint();
   }
 
   Future<SharedPreferences> _getPrefs() async {
@@ -399,6 +441,39 @@ class _ScoreScreenState extends State<ScoreScreen>
     }
   }
 
+  Future<void> _checkSwipeHint() async {
+    try {
+      final prefs = await _getPrefs();
+      final hasSeenHint = prefs.getBool('hasSeenSwipeHint') ?? false;
+      if (!hasSeenHint) {
+        // Show hint after 2 seconds
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            setState(() => _showSwipeHint = true);
+          }
+          // Hide after 3 seconds
+          Future.delayed(const Duration(seconds: 3), () {
+            if (mounted) {
+              setState(() => _showSwipeHint = false);
+            }
+          });
+        });
+      }
+    } catch (e) {
+      // If loading fails, don't show hint
+      debugPrint('Swipe hint check failed: $e');
+    }
+  }
+
+  Future<void> _markSwipeHintAsSeen() async {
+    try {
+      final prefs = await _getPrefs();
+      await prefs.setBool('hasSeenSwipeHint', true);
+    } catch (e) {
+      debugPrint('Swipe hint save failed: $e');
+    }
+  }
+
   Future<void> _beep() async {
     if (soundEnabled) {
       try {
@@ -450,6 +525,20 @@ class _ScoreScreenState extends State<ScoreScreen>
   bool _isGamePoint(int score, int opponentScore) {
     // Check if scoring one more point would win
     return _checkWin(score + 1, opponentScore);
+  }
+
+  void _updateGamePointAnimation() {
+    final leftIsGamePoint = _isGamePoint(leftScore, rightScore);
+    final rightIsGamePoint = _isGamePoint(rightScore, leftScore);
+
+    if (leftIsGamePoint || rightIsGamePoint) {
+      if (!_gamePointController.isAnimating) {
+        _gamePointController.repeat(reverse: true);
+      }
+    } else {
+      _gamePointController.stop();
+      _gamePointController.reset();
+    }
   }
 
   void _showWinCelebration(bool isLeftWinner) {
@@ -595,6 +684,16 @@ class _ScoreScreenState extends State<ScoreScreen>
       }
     });
 
+    // Trigger score change animation
+    if (isLeft) {
+      _leftScoreController.forward().then((_) => _leftScoreController.reverse());
+    } else {
+      _rightScoreController.forward().then((_) => _rightScoreController.reverse());
+    }
+
+    // Update game point animation state
+    _updateGamePointAnimation();
+
     _beep();
 
     // Check for win
@@ -618,6 +717,9 @@ class _ScoreScreenState extends State<ScoreScreen>
       totalPoints--;
       // Note: Decrements are manual corrections, not tracked in undo history
     });
+
+    // Update game point animation state
+    _updateGamePointAnimation();
   }
 
   void _undo() {
@@ -750,6 +852,7 @@ class _ScoreScreenState extends State<ScoreScreen>
           _safeAction(() => _showMenuDialog());
         },
         onLongPress: () {
+          HapticFeedback.mediumImpact();
           _safeAction(() => _quickReset());
         },
         child: Container(
@@ -782,6 +885,9 @@ class _ScoreScreenState extends State<ScoreScreen>
   void dispose() {
     _player.dispose();
     _scaleController.dispose();
+    _leftScoreController.dispose();
+    _rightScoreController.dispose();
+    _gamePointController.dispose();
     super.dispose();
   }
 
@@ -912,20 +1018,28 @@ class _ScoreScreenState extends State<ScoreScreen>
   Widget _buildScoreSection(ThemeColors theme) {
     return Expanded(
       flex: AppConstants.scoreSectionFlex,
-      child: GestureDetector(
-        onPanEnd: (details) {
-          final velocity = details.velocity.pixelsPerSecond;
-          final isHorizontalSwipe = velocity.dx.abs() > velocity.dy.abs();
-          final isFastSwipe = velocity.dx.abs() > AppConstants.minSwipeVelocity;
+      child: Stack(
+        children: [
+          GestureDetector(
+            onPanEnd: (details) {
+              final velocity = details.velocity.pixelsPerSecond;
+              final isHorizontalSwipe = velocity.dx.abs() > velocity.dy.abs();
+              final isFastSwipe = velocity.dx.abs() > AppConstants.minSwipeVelocity;
 
-          if (isHorizontalSwipe && isFastSwipe) {
-            if (velocity.dx > 0) {
-              _previousTheme();
-            } else {
-              _nextTheme();
-            }
-          }
-        },
+              if (isHorizontalSwipe && isFastSwipe) {
+                // Mark hint as seen on first swipe
+                if (_showSwipeHint) {
+                  _markSwipeHintAsSeen();
+                  setState(() => _showSwipeHint = false);
+                }
+
+                if (velocity.dx > 0) {
+                  _previousTheme();
+                } else {
+                  _nextTheme();
+                }
+              }
+            },
         child: Column(
           children: [
             // Games counter row
@@ -979,25 +1093,15 @@ class _ScoreScreenState extends State<ScoreScreen>
                             fontFamily: 'Poppins',
                           ),
                         ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (isLeftServing)
-                              Icon(Icons.sports_tennis,
-                                  color: theme.primary, size: 20),
-                            Text(
-                              " SERVE ",
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: theme.accent,
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            if (!isLeftServing)
-                              Icon(Icons.sports_tennis,
-                                  color: theme.secondary, size: 20),
-                          ],
+                        const SizedBox(height: 4),
+                        AnimatedAlign(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                          alignment: isLeftServing ? Alignment.centerLeft : Alignment.centerRight,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: const Text('🏸', style: TextStyle(fontSize: 24)),
+                          ),
                         ),
                       ],
                     ),
@@ -1052,6 +1156,7 @@ class _ScoreScreenState extends State<ScoreScreen>
                       servingColor: theme.accent,
                       isGamePoint: _isGamePoint(leftScore, rightScore),
                       gamePointColor: theme.gamePoint,
+                      isLeft: true,
                     ),
                   ),
                   _buildGridItem(
@@ -1068,6 +1173,7 @@ class _ScoreScreenState extends State<ScoreScreen>
                       servingColor: theme.accent,
                       isGamePoint: _isGamePoint(rightScore, leftScore),
                       gamePointColor: theme.gamePoint,
+                      isLeft: false,
                     ),
                   ),
                 ],
@@ -1076,8 +1182,53 @@ class _ScoreScreenState extends State<ScoreScreen>
           ],
         ),
       ),
-    );
-  }
+      // Swipe hint overlay
+      if (_showSwipeHint)
+        Positioned(
+          top: 100,
+          left: 0,
+          right: 0,
+          child: AnimatedOpacity(
+            opacity: _showSwipeHint ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 300),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.black87,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.swipe, color: theme.gamePoint, size: 24),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Swipe to change theme',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+    ],
+    ),
+  );
+}
 
   Widget _buildControlSection(ThemeColors theme) {
     return Expanded(
@@ -1472,6 +1623,7 @@ class _ScoreScreenState extends State<ScoreScreen>
     required Color servingColor,
     required bool isGamePoint,
     required Color gamePointColor,
+    required bool isLeft,
   }) {
     // Use game point color when at game point
     final effectiveColor = isGamePoint ? gamePointColor : color;
@@ -1487,46 +1639,64 @@ class _ScoreScreenState extends State<ScoreScreen>
           final scale = isScaling ? _scaleAnimation.value : 1.0;
           return Transform.scale(
             scale: scale,
-            child: Material(
-              elevation: 8,
-              shadowColor: Colors.black26,
-              borderRadius: BorderRadius.circular(16),
-              child: InkWell(
-                onTap: onTap,
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: effectiveColor,
+            child: AnimatedBuilder(
+              animation: _gamePointAnimation,
+              builder: (context, child) {
+                final glowOpacity = isGamePoint ? _gamePointAnimation.value : 1.0;
+                return Opacity(
+                  opacity: glowOpacity,
+                  child: Material(
+                    elevation: 8,
+                    shadowColor: Colors.black26,
                     borderRadius: BorderRadius.circular(16),
-                    border: isServing
-                        ? Border.all(color: servingColor, width: 4)
-                        : null,
-                    boxShadow: isGamePoint
-                        ? [
-                            BoxShadow(
-                              color: gamePointColor.withValues(alpha: 0.5),
-                              blurRadius: 20,
-                              spreadRadius: 2,
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      "$score",
-                      style: TextStyle(
-                        fontSize: AppConstants.scoreTextSize,
-                        color: textColor,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 2,
-                        fontFamily: 'Poppins',
+                    child: InkWell(
+                      onTap: onTap,
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: effectiveColor,
+                          borderRadius: BorderRadius.circular(16),
+                          border: isServing
+                              ? Border.all(color: servingColor, width: 4)
+                              : null,
+                          boxShadow: isGamePoint
+                              ? [
+                                  BoxShadow(
+                                    color: gamePointColor.withValues(alpha: 0.5),
+                                    blurRadius: 20,
+                                    spreadRadius: 2,
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: AnimatedBuilder(
+                          animation: isLeft ? _leftScoreAnimation : _rightScoreAnimation,
+                          builder: (context, child) {
+                            final scoreScale = isLeft ? _leftScoreAnimation.value : _rightScoreAnimation.value;
+                            return Transform.scale(
+                              scale: scoreScale,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  "$score",
+                                  style: TextStyle(
+                                    fontSize: AppConstants.scoreTextSize,
+                                    color: textColor,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 2,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           );
         },
