@@ -1,15 +1,21 @@
 # Architecture Documentation
 
+**Part:** main (Mobile Application - Flutter)
+**Last Updated:** 2026-01-24
+**Project Type:** Mobile Application (Flutter)
+
+---
+
 ## Executive Summary
 
-The Badminton Score Keeper is a Flutter mobile application built with a **single-file architecture** optimized for simplicity, performance, and maintainability. The app provides a professional score tracking experience for local badminton communities with features including customizable themes, audio feedback, persistent storage, and advanced gesture controls.
+The Badminton Score Keeper is a Flutter mobile application built with a **modularized architecture** optimized for simplicity, performance, and maintainability. The app provides a professional score tracking experience for local badminton communities with features including customizable themes, audio feedback, persistent storage, and advanced gesture controls.
 
 **Key Characteristics:**
-- **Architecture Pattern:** Single-file component-based architecture
+- **Architecture Pattern:** Modularized widget-based architecture
 - **State Management:** Local setState() with SharedPreferences persistence
-- **UI Framework:** Flutter Material Design 3
+- **UI Framework:** Flutter Material Design 3 with glassmorphic design
 - **Platform Support:** Android, iOS (primary), Web, Desktop (scaffolded)
-- **Code Size:** 1,580 lines in single file (lib/main.dart)
+- **Code Size:** ~1,250+ lines across 13 files
 - **Dependencies:** 3 runtime packages (minimal footprint)
 
 ## Technology Stack
@@ -54,39 +60,44 @@ The Badminton Score Keeper is a Flutter mobile application built with a **single
 
 ## Architecture Pattern
 
-### Single-File Component Architecture
+### Modularized Widget-Based Architecture
 
-**Pattern:** All application code resides in a single file (lib/main.dart) with clear class-based separation of concerns.
+**Pattern:** Application code is organized into three main modules: models, theme, and widgets, with a clean entry point in main.dart.
 
 **Rationale:**
-- **Simplicity:** Easy navigation, no file jumping
-- **Performance:** Reduced import overhead
-- **Maintainability:** Clear code organization within file
-- **Development Speed:** Fast iteration cycles
+- **Organization:** Clear separation of concerns
+- **Testability:** Each module can be tested independently
+- **Maintainability:** Easy to locate and modify code
+- **Team-Friendly:** Supports parallel development
 
-**Structure:**
+**Module Structure:**
 ```
-lib/main.dart (1,580 lines)
-├── Constants Layer (lines 8-42)
-│   ├── AppConstants - UI dimensions and game rules
-│   └── ThemeKeys - Theme identifiers
-├── Data Layer (lines 43-196)
-│   ├── ThemeColors - Theme color palette
-│   ├── ScoreAction - Undo history entry
-│   └── GameState - Complete game state
-├── Theme System (lines 65-121)
-│   └── AppThemes - Theme definitions
-├── Application Root (lines 198-288)
-│   ├── main() - Entry point
-│   └── BadmintonScoreApp - Global state holder
-└── Main Screen (lines 290-1579)
-    └── ScoreScreen - Complete UI implementation
+lib/
+├── main.dart (~650 lines)      # Entry point and main screen
+├── models/ (~150 lines)
+│   ├── app_constants.dart      # Configuration constants
+│   ├── game_state.dart         # Immutable state
+│   ├── score_action.dart       # Undo history
+│   └── match_result.dart       # Persistence model
+├── theme/ (~155 lines)
+│   ├── theme.dart              # Re-exports
+│   ├── app_colors.dart         # ThemeColors class
+│   └── app_theme.dart          # 6 theme definitions
+└── widgets/ (~950 lines)
+    ├── score_card.dart         # Score display
+    ├── control_button.dart     # Control buttons
+    ├── glass_container.dart    # Glassmorphic wrapper
+    ├── win_dialog.dart         # Win celebration
+    ├── settings_dialog.dart    # Settings modal
+    ├── rename_dialog.dart      # Player names
+    └── match_history_dialog.dart # Match history
 ```
 
-**Trade-offs:**
-- ✅ **Pros:** Simple, fast, easy to understand
-- ⚠️ **Cons:** Large file size, limited parallel development
-- 📊 **Threshold:** Consider splitting at 2,000+ lines
+**Benefits:**
+- Clear separation of data, presentation, and logic
+- Reusable components across the app
+- Easy to add new features
+- Improved code navigation
 
 ### Component Hierarchy
 

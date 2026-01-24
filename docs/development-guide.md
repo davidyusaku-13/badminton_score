@@ -1,5 +1,9 @@
 # Development Guide
 
+**Part:** main (Mobile Application - Flutter)
+**Last Updated:** 2026-01-24
+**Project Type:** Mobile Application (Flutter)
+
 ## Prerequisites
 
 ### Required Software
@@ -90,7 +94,24 @@ This should launch the app on a connected device or emulator.
 ```
 badminton_score/
 ├── lib/
-│   └── main.dart              # Complete application (1580 lines)
+│   ├── main.dart             # App entry point (~650 lines)
+│   ├── models/               # Data models
+│   │   ├── app_constants.dart
+│   │   ├── game_state.dart
+│   │   ├── score_action.dart
+│   │   └── match_result.dart
+│   ├── theme/                # Theme system
+│   │   ├── theme.dart
+│   │   ├── app_colors.dart
+│   │   └── app_theme.dart
+│   └── widgets/              # UI components
+│       ├── score_card.dart
+│       ├── control_button.dart
+│       ├── glass_container.dart
+│       ├── win_dialog.dart
+│       ├── settings_dialog.dart
+│       ├── rename_dialog.dart
+│       └── match_history_dialog.dart
 ├── test/
 │   └── widget_test.dart       # Widget tests
 ├── assets/
@@ -808,6 +829,9 @@ flutter devices                              # List devices
 ### File Locations
 
 - **Main code:** `lib/main.dart`
+- **Models:** `lib/models/*.dart`
+- **Theme:** `lib/theme/*.dart`
+- **Widgets:** `lib/widgets/*.dart`
 - **Tests:** `test/widget_test.dart`
 - **Assets:** `assets/`
 - **Config:** `pubspec.yaml`

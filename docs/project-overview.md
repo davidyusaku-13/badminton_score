@@ -1,28 +1,35 @@
 # Project Overview
 
+**Part:** main (Mobile Application - Flutter)
+**Last Updated:** 2026-01-24
+**Project Type:** Mobile Application (Flutter)
+
+---
+
 ## Project Information
 
 **Name:** Badminton Score Keeper
-**Version:** 1.0.0+1
+**Version:** 1.1.0+1
 **Type:** Mobile Application (Flutter)
 **Platform Support:** Android, iOS (primary), Web, Desktop (scaffolded)
 **Repository Type:** Monolith (single cohesive codebase)
 
 ## Purpose
 
-A professional Flutter badminton score tracking application designed for local community use. Features a clean Material Design interface with advanced gesture controls, multiple themes, and community-focused functionality. The app is optimized for landscape mobile devices with emphasis on simplicity and reliability.
+A professional Flutter badminton score tracking application designed for local community use. Features a clean Material Design interface with glassmorphic UI, advanced gesture controls, multiple themes, and community-focused functionality. The app is optimized for landscape mobile devices with emphasis on simplicity and reliability.
 
 ## Executive Summary
 
-The Badminton Score Keeper is a polished, production-ready mobile application that demonstrates best practices in Flutter development while maintaining a pragmatic, simple architecture. Built with a single-file approach (1,580 lines), the app prioritizes user experience, performance, and maintainability over complex abstractions.
+The Badminton Score Keeper is a polished, production-ready mobile application that demonstrates best practices in Flutter development with a modularized architecture. The app prioritizes user experience, performance, and maintainability with 6 custom themes, gesture controls, and persistent match history.
 
 **Key Highlights:**
-- **Minimal Dependencies:** Only 3 runtime packages (19 MB APK)
+- **Minimal Dependencies:** Only 3 runtime packages (~19 MB APK)
 - **Offline-First:** No internet required, works anywhere
 - **Accessible:** WCAG AA compliant, large touch targets
-- **Professional UI:** Material Design 3 with 5 custom themes
-- **Advanced Features:** Undo system, gesture controls, audio feedback
+- **Professional UI:** Material Design 3 with 6 custom glassmorphic themes
+- **Advanced Features:** Undo system, gesture controls, audio feedback, match history
 - **Community-Focused:** Designed for local badminton clubs and communities
+- **Modularized:** 13 files organized into models/, theme/, and widgets/
 
 ## Technology Stack Summary
 

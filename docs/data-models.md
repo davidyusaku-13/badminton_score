@@ -1,240 +1,445 @@
-# Data Models
+# Data Models Documentation
+
+**Part:** main (Mobile Application - Flutter)
+**Last Updated:** 2026-01-24
+**Project Type:** Mobile Application (Flutter)
+
+---
 
 ## Overview
 
-The badminton score keeper uses a minimal data model architecture with three primary classes for managing application state and configuration.
+This document describes the data models used in the Badminton Score Keeper application. The app uses an immutable state pattern with local state management via `setState()`. The codebase was recently modularized from a single-file architecture to a structured modular layout.
+
+---
 
 ## Core Data Models
 
-### 1. GameState
+### GameState
 
-**Location:** `lib/main.dart:139-196`
+**File:** `lib/models/game_state.dart`
 
-**Purpose:** Immutable data class representing the complete game state at any point in time.
+The immutable state object representing the current game state.
 
-**Fields:**
-- `leftScore: int` - Current score for left player
-- `rightScore: int` - Current score for right player
-- `leftGames: int` - Games won by left player
-- `rightGames: int` - Games won by right player
-- `isLeftServing: bool` - Serving indicator (true = left serves)
-- `targetScore: int` - Configurable win target (default: 21)
-- `leftPlayerName: String` - Left player display name
-- `rightPlayerName: String` - Right player display name
-
-**Computed Properties:**
-- `totalPoints: int` - Sum of both scores (leftScore + rightScore)
-
-**Methods:**
-- `copyWith()` - Creates modified copy with selective field updates
-- `GameState.initial()` - Factory constructor for default initial state
-
-**Usage Pattern:**
 ```dart
-// Immutable state updates via copyWith
-final newState = currentState.copyWith(leftScore: 5);
+class GameState {
+  final int leftScore;
+  final int rightScore;
+  final int leftGames;
+  final int rightGames;
+  final bool isLeftServing;
+  final int targetScore;
+  final String leftPlayerName;
+  final String rightPlayerName;
+
+  const GameState({
+    required this.leftScore,
+    required this.rightScore,
+    required this.leftGames,
+    required this.rightGames,
+    required this.isLeftServing,
+    required this.targetScore,
+    required this.leftPlayerName,
+    required this.rightPlayerName,
+  });
+
+  int get totalPoints => leftScore + rightScore;
+
+  factory GameState.initial() {
+    return const GameState(
+      leftScore: 0,
+      rightScore: 0,
+      leftGames: 0,
+      rightGames: 0,
+      isLeftServing: true,
+      targetScore: AppConstants.defaultTargetScore,
+      leftPlayerName: 'Left',
+      rightPlayerName: 'Right',
+    );
+  }
+
+  GameState copyWith({
+    int? leftScore,
+    int? rightScore,
+    int? leftGames,
+    int? rightGames,
+    bool? isLeftServing,
+    int? targetScore,
+    String? leftPlayerName,
+    String? rightPlayerName,
+  }) {
+    return GameState(
+      leftScore: leftScore ?? this.leftScore,
+      rightScore: rightScore ?? this.rightScore,
+      leftGames: leftGames ?? this.leftGames,
+      rightGames: rightGames ?? this.rightGames,
+      isLeftServing: isLeftServing ?? this.isLeftServing,
+      targetScore: targetScore ?? this.targetScore,
+      leftPlayerName: leftPlayerName ?? this.leftPlayerName,
+      rightPlayerName: rightPlayerName ?? this.rightPlayerName,
+    );
+  }
+}
 ```
 
-### 2. ScoreAction
-
-**Location:** `lib/main.dart:124-136`
-
-**Purpose:** Represents a single score change action for undo functionality.
-
 **Fields:**
-- `isLeft: bool` - Which side scored (true = left, false = right)
-- `previousScore: int` - Score before the action
-- `newScore: int` - Score after the action
-- `previousServerWasLeft: bool` - Serving state before action
 
-**Usage Pattern:**
+| Field | Type | Description |
+|-------|------|-------------|
+| `leftScore` | int | Current score for left player |
+| `rightScore` | int | Current score for right player |
+| `leftGames` | int | Games won by left player |
+| `rightGames` | int | Games won by right player |
+| `isLeftServing` | bool | True if left player is serving |
+| `targetScore` | int | Winning score threshold |
+| `leftPlayerName` | String | Custom name for left player |
+| `rightPlayerName` | String | Custom name for right player |
+
+---
+
+### ScoreAction
+
+**File:** `lib/models/score_action.dart`
+
+Records a score change for undo functionality.
+
 ```dart
-// Stored in undo history list (max 10 entries)
-_undoHistory.add(ScoreAction(
-  isLeft: true,
-  previousScore: 4,
-  newScore: 5,
-  previousServerWasLeft: true,
-));
+class ScoreAction {
+  final bool isLeft;
+  final int previousScore;
+  final int newScore;
+  final bool previousServerWasLeft;
+
+  const ScoreAction({
+    required this.isLeft,
+    required this.previousScore,
+    required this.newScore,
+    required this.previousServerWasLeft,
+  });
+}
 ```
 
-**Constraints:**
-- Maximum history size: 10 actions (defined in `AppConstants.maxUndoHistory`)
-- Only tracks score increments, not manual decrements
+**Purpose:** Enables the undo feature by storing the state before each score change.
 
-### 3. ThemeColors
+---
 
-**Location:** `lib/main.dart:43-63`
+### MatchResult
 
-**Purpose:** Immutable data class defining a complete theme color palette.
+**File:** `lib/models/match_result.dart`
 
-**Fields:**
-- `name: String` - Display name of theme
-- `background: Color` - Main background color
-- `primary: Color` - Primary button/accent color (left score)
-- `secondary: Color` - Secondary button color (right score)
-- `surface: Color` - Control button surface color
-- `onSurface: Color` - Text color on surfaces
-- `accent: Color` - Menu button and serving indicator color
-- `gamePoint: Color` - Special color for game point state
+Persisted match result for history tracking with JSON serialization.
 
-**Theme Definitions:**
-- **Light** - Orange/amber on light gray background
-- **Minimal** - Grayscale on white background
-- **Energy** - Red/orange on cream background
-- **Court** - Green/lime on light green background
-- **Champion** - Pink/red on light pink background
-
-**Usage Pattern:**
 ```dart
-// Themes stored in const Map for compile-time optimization
-static const Map<String, ThemeColors> themes = {
-  'light': ThemeColors(name: 'Light', background: Color(0xFFFAFAFA), ...),
-  // ... other themes
-};
+class MatchResult {
+  final DateTime date;
+  final int leftScore;
+  final int rightScore;
+  final String leftPlayerName;
+  final String rightPlayerName;
+  final String winner;
+
+  const MatchResult({
+    required this.date,
+    required this.leftScore,
+    required this.rightScore,
+    required this.leftPlayerName,
+    required this.rightPlayerName,
+    required this.winner,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'date': date.toIso8601String(),
+      'leftScore': leftScore,
+      'rightScore': rightScore,
+      'leftPlayerName': leftPlayerName,
+      'rightPlayerName': rightPlayerName,
+      'winner': winner,
+    };
+  }
+
+  factory MatchResult.fromJson(Map<String, dynamic> json) {
+    return MatchResult(
+      date: DateTime.parse(json['date'] as String),
+      leftScore: json['leftScore'] as int,
+      rightScore: json['rightScore'] as int,
+      leftPlayerName: json['leftPlayerName'] as String,
+      rightPlayerName: json['rightPlayerName'] as String,
+      winner: json['winner'] as String,
+    );
+  }
+
+  static String encodeList(List<MatchResult> results) {
+    return jsonEncode(results.map((r) => r.toJson()).toList());
+  }
+
+  static List<MatchResult> decodeList(String json) {
+    final List<dynamic> decoded = jsonDecode(json);
+    return decoded.map((item) => MatchResult.fromJson(item)).toList();
+  }
+}
 ```
 
-## Configuration Constants
+**Persistence:** Stored in SharedPreferences as JSON-encoded list (max 50 matches).
+
+---
 
 ### AppConstants
 
-**Location:** `lib/main.dart:8-32`
+**File:** `lib/models/app_constants.dart`
 
-**Purpose:** Centralized configuration for UI dimensions and game rules.
+Configuration constants for game rules and UI.
 
-**UI Constants:**
-- `scoreSectionFlex: 75` - Score area height percentage
-- `controlSectionFlex: 25` - Control area height percentage
-- `scoreTextSize: 256` - Base font size for scores
-- `controlTextSize: 50` - Font size for control buttons
-- `buttonTextSize: 30` - Font size for menu items
-- `controlButtonHeight: 56` - Fixed height for control buttons
-
-**Game Rules:**
-- `minTargetScore: 5` - Minimum allowed target score
-- `defaultTargetScore: 21` - Standard badminton target
-- `maxScoreOffset: 9` - Sudden death cap (target + 9)
-- `minWinMargin: 2` - Required lead to win at target
-
-**Behavioral Constants:**
-- `maxUndoHistory: 10` - Maximum undo actions stored
-- `minSwipeVelocity: 500` - Pixels/second for theme swipe
-- `highScoreThreshold: 10` - Score threshold for reset undo option
-
-## Data Persistence
-
-### SharedPreferences Storage
-
-**Persisted Data:**
-- `theme: String` - Current theme key
-- `soundEnabled: bool` - Audio feedback toggle
-- `targetScore: int` - Custom target score setting
-- `leftPlayerName: String` - Left player name
-- `rightPlayerName: String` - Right player name
-
-**Storage Pattern:**
 ```dart
-// Cached instance to avoid repeated async calls
-SharedPreferences? _prefs;
+class AppConstants {
+  // Layout Constants
+  static const int scoreSectionFlex = 75;
+  static const int controlSectionFlex = 25;
+  static const double scoreTextSize = 256;
+  static const double controlTextSize = 50;
+  static const double buttonTextSize = 30;
+  static const EdgeInsets gridPadding =
+      EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0);
 
-Future<SharedPreferences> _getPrefs() async {
-  _prefs ??= await SharedPreferences.getInstance();
-  return _prefs!;
+  // Badminton Rules
+  static const int minTargetScore = 5;
+  static const int defaultTargetScore = 21;
+  static const int defaultMatchGames = 3; // Best of 3
+  static const int maxScoreOffset = 9; // maxScore = targetScore + 9
+  static const int minWinMargin = 2;
+  static const List<int> targetScoreOptions = [11, 15, 21, 30];
+
+  // Undo history limit
+  static const int maxUndoHistory = 10;
+
+  // Gesture thresholds
+  static const double minSwipeVelocity = 500;
+
+  // UI thresholds
+  static const int highScoreThreshold = 10;
+  static const double controlButtonHeight = 56;
 }
 ```
 
-**Persistence Locations:**
-- Theme changes: Immediate save on theme switch
-- Sound toggle: Saved when changed in menu
-- Game settings: Saved when dialog confirmed
-- Player names: Saved when dialog confirmed
+---
+
+## Theme System
+
+### ThemeColors
+
+**File:** `lib/theme/app_colors.dart`
+
+Immutable color palette for theming.
+
+```dart
+class ThemeColors {
+  final String name;
+  final Color background;
+  final Color primary;
+  final Color secondary;
+  final Color surface;
+  final Color onSurface;
+  final Color accent;
+  final Color glassBorder;
+  final Color textPrimary;
+  final Color textSecondary;
+  final Color gamePoint;
+  final Gradient backgroundGradient;
+
+  const ThemeColors({
+    required this.name,
+    required this.background,
+    required this.primary,
+    required this.secondary,
+    required this.surface,
+    required this.onSurface,
+    required this.accent,
+    required this.gamePoint,
+    this.glassBorder = const Color(0x33FFFFFF),
+    this.textPrimary = const Color(0xFFFFFFFF),
+    this.textSecondary = const Color(0xB3FFFFFF),
+    this.backgroundGradient = const LinearGradient(
+      colors: [Color(0xFF1a1a1a), Color(0xFF121212)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    ),
+  });
+}
+```
+
+### AppThemes
+
+**File:** `lib/theme/app_theme.dart`
+
+Predefined theme configurations.
+
+```dart
+class AppThemes {
+  static const Map<String, ThemeColors> themes = {
+    'light': ThemeColors(...),
+    'minimal': ThemeColors(...),
+    'energy': ThemeColors(...),
+    'court': ThemeColors(...),
+    'champion': ThemeColors(...),
+    'midnight': ThemeColors(...),
+  };
+
+  static final List<String> themeKeys = themes.keys.toList();
+}
+```
+
+**Available Themes:**
+| Key | Name | Description |
+|-----|------|-------------|
+| `light` | Light | Orange/amber on light gray |
+| `minimal` | Minimal | Grayscale on white |
+| `energy` | Energy | Red/orange on cream |
+| `court` | Court | Green/lime on light green |
+| `champion` | Champion | Pink/red on light pink |
+| `midnight` | Midnight | Purple/teal on dark (default) |
+
+---
 
 ## State Management Architecture
 
-### Local State (setState)
+### Local State Pattern
 
-**Managed in:** `_ScoreScreenState` class
+The app uses `setState()` for local state management:
 
-**State Variables:**
-- Score tracking: `leftScore`, `rightScore`, `leftGames`, `rightGames`
-- Game configuration: `targetScore`, `leftPlayerName`, `rightPlayerName`
-- UI state: `soundEnabled`, `isLeftServing`, `totalPoints`
-- Animation state: `_isLeftScaling`, `_isRightScaling`
-- History: `_undoHistory` (List<ScoreAction>)
+1. **Global State (Theme):** Managed in `BadmintonScoreApp` widget
+2. **Game State:** Managed in `_ScoreScreenState` widget
 
-**Update Pattern:**
-```dart
-void _incrementScore(bool isLeft) {
-  setState(() {
-    if (isLeft) leftScore++;
-    else rightScore++;
-    totalPoints++;
-    _updateServingIndicator(isLeft);
-    _undoHistory.add(ScoreAction(...));
-  });
-  _beep();
-  // Check for win condition
-}
-```
-
-### Global State (Theme)
-
-**Managed in:** `_BadmintonScoreAppState` class
-
-**State Variables:**
-- `currentTheme: String` - Active theme key
-- `_isLoading: bool` - Initial load state
-
-**Propagation:**
-- Theme passed down via constructor: `ScoreScreen(currentTheme: currentTheme)`
-- Changes propagated up via callback: `onThemeChange: changeTheme`
-
-## Data Flow Diagram
+### State Flow
 
 ```
-User Action
-    ↓
-Event Handler (_incrementScore, _swapSides, etc.)
-    ↓
-setState() - Update local state
-    ↓
-Widget Rebuild (build method)
-    ↓
-UI Update (Material widgets)
-    ↓
-Optional: Persist to SharedPreferences
+User Input → _ScoreScreenState.setState() → UI Rebuild
+                                              ↓
+                                    SharedPreferences (persisted)
 ```
+
+### Persistence
+
+**Persisted to SharedPreferences:**
+- Theme selection
+- Sound toggle state
+- Target score
+- Player names
+- Match history (JSON-encoded list, max 50)
+
+**Transient (session-only):**
+- Current scores
+- Games won
+- Undo history
+
+---
 
 ## Validation Rules
 
+### Win Detection
+
+```dart
+bool _checkWin(int score, int opponentScore) {
+  final dynamicMaxScore = targetScore + AppConstants.maxScoreOffset;
+  if (score >= dynamicMaxScore) return true;  // Sudden death cap
+  if (score >= targetScore &&
+      score - opponentScore >= AppConstants.minWinMargin) {
+    return true;  // Normal win with margin
+  }
+  return false;
+}
+```
+
+**Win Conditions:**
+1. Score >= targetScore + 9 (sudden death cap at 30)
+2. Score >= targetScore AND margin >= 2 points
+
 ### Score Validation
 - Scores cannot go below 0 (checked in `_decrementScore`)
-- Win detection at `targetScore` with 2-point margin
-- Sudden death at `targetScore + 9` (no margin required)
+- Win detection triggered after each score increment
 
 ### Target Score Validation
-- Minimum: 5 points (`AppConstants.minTargetScore`)
-- No maximum enforced
-- Validated in game settings dialog before saving
+- Minimum: 5 points
+- Options: 11, 15, 21, 30
 
-### Player Name Validation
-- Empty names default to "Left" / "Right"
-- No length restrictions
-- Trimmed before saving
+---
+
+## Data Flow
+
+### Score Increment Flow
+
+```
+1. User taps score area
+2. _incrementScore(isLeft)
+3. Create ScoreAction for undo history
+4. setState() updates score and serving state
+5. Check for win condition
+6. Play audio feedback
+7. Update UI
+```
+
+### Undo Flow
+
+```
+1. User taps Undo button
+2. _undo() retrieves last ScoreAction from history
+3. Restore previous score values
+4. Restore serving state
+5. setState() updates UI
+```
+
+---
 
 ## Memory Management
 
 ### Undo History Limits
-- Maximum 10 actions stored
+- Maximum 10 actions stored (AppConstants.maxUndoHistory)
 - Oldest action removed when limit exceeded
 - Cleared on game reset or new game
 
+### Match History Limits
+- Maximum 50 matches stored
+- Oldest match removed when limit exceeded
+
 ### Audio Resource Management
-- Single `AudioPlayer` instance
+- Single `AudioPlayer` instance per screen
 - Preloaded audio source in `initState()`
-- Properly disposed in `dispose()` method
+- Properly disposed in `dispose()`
 
 ### SharedPreferences Caching
 - Single instance cached per state object
 - Reduces async overhead on repeated access
-- No manual cleanup required (managed by Flutter)
+
+---
+
+## Module Structure
+
+```
+lib/
+├── models/
+│   ├── app_constants.dart    # Configuration constants
+│   ├── game_state.dart       # Immutable game state
+│   ├── score_action.dart     # Undo action record
+│   └── match_result.dart     # Match result with JSON serialization
+├── theme/
+│   ├── theme.dart            # Re-exports
+│   ├── app_colors.dart       # ThemeColors class
+│   └── app_theme.dart        # AppThemes with 6 predefined themes
+└── main.dart                 # App entry point and main UI
+```
+
+---
+
+## Summary
+
+| Model | Purpose | Persistence | File |
+|-------|---------|-------------|------|
+| `GameState` | Current game state | Transient | `game_state.dart` |
+| `ScoreAction` | Undo history | Transient | `score_action.dart` |
+| `MatchResult` | Match records | SharedPreferences | `match_result.dart` |
+| `AppConstants` | Configuration | Static | `app_constants.dart` |
+| `ThemeColors` | Theme palette | Static | `app_colors.dart` |
+| `AppThemes` | Theme definitions | Static | `app_theme.dart` |
+
+---
+
+*Generated by BMAD document-project workflow (exhaustive scan)*
+*Updated 2026-01-24 to reflect modularized architecture*

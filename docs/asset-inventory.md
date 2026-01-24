@@ -1,8 +1,8 @@
 # Asset Inventory
 
-## Overview
-
-The badminton score keeper uses a minimal asset footprint optimized for mobile deployment. Total asset size: **3.1 MB**
+**Part:** main (Mobile Application - Flutter)
+**Last Updated:** 2026-01-24
+**Project Type:** Mobile Application (Flutter)
 
 ## Asset Categories
 

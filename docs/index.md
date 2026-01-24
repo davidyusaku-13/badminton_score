@@ -1,20 +1,21 @@
 # Badminton Score Keeper - Documentation Index
 
-**Version:** 1.0.0+1
-**Last Updated:** 2026-01-16
+**Version:** 1.1.0+1
+**Last Updated:** 2026-01-24
 **Project Type:** Mobile Application (Flutter)
 
 ---
 
 ## Project Overview
 
-**Badminton Score Keeper** is a professional Flutter mobile application designed for local badminton communities. Features a clean Material Design interface with advanced gesture controls, multiple themes, and community-focused functionality.
+**Badminton Score Keeper** is a professional Flutter mobile application designed for local badminton communities. Features a clean Material Design interface with glassmorphic UI, advanced gesture controls, multiple themes, and community-focused functionality.
 
-- **Architecture:** Single-file component-based architecture
+- **Architecture:** Modularized widget-based architecture (13 files)
 - **Platform Support:** Android, iOS (primary), Web, Desktop (scaffolded)
-- **Code Size:** 1,580 lines in lib/main.dart
+- **Code Size:** ~1,250+ lines across 13 Dart files
 - **APK Size:** ~19 MB (optimized with shrinking)
 - **Dependencies:** 3 runtime packages (minimal footprint)
+- **Themes:** 6 custom glassmorphic themes
 
 ---
 
@@ -27,9 +28,10 @@
 | **Repository Type** | Monolith (single cohesive codebase) |
 | **Primary Language** | Dart |
 | **Framework** | Flutter >=3.6.0 |
-| **Architecture Pattern** | Single-file component architecture |
+| **Architecture Pattern** | Modularized widget-based architecture |
 | **State Management** | Local setState() with SharedPreferences |
-| **Entry Point** | lib/main.dart:198 (main function) |
+| **Entry Point** | lib/main.dart (main function) |
+| **Module Count** | 13 files (models/, theme/, widgets/) | |
 
 ### Technology Stack
 
@@ -43,15 +45,17 @@
 ### Key Features
 
 - ✅ Score tracking with tap-to-increment
-- ✅ 5 customizable themes with swipe navigation
+- ✅ 6 customizable themes with swipe navigation
 - ✅ Undo system (up to 10 actions)
 - ✅ Audio feedback with preloading
-- ✅ Configurable target score (default: 21)
-- ✅ Win detection with 2-point margin
+- ✅ Configurable target score (11, 15, 21, 30)
+- ✅ Win detection with 2-point margin + sudden death
 - ✅ Games won tracking
 - ✅ Player name customization
+- ✅ Match history (up to 50 matches)
 - ✅ Landscape-only orientation
 - ✅ Screen always-on during matches
+- ✅ Glassmorphic UI design
 
 ---
 
@@ -177,7 +181,24 @@ flutter build apk --release    # Build Android APK (~19 MB)
 ```
 badminton_score/
 ├── lib/
-│   └── main.dart              # Complete application (1,580 lines)
+│   ├── main.dart             # App entry point
+│   ├── models/               # Data models
+│   │   ├── app_constants.dart
+│   │   ├── game_state.dart
+│   │   ├── score_action.dart
+│   │   └── match_result.dart
+│   ├── theme/                # Theme system
+│   │   ├── theme.dart
+│   │   ├── app_colors.dart
+│   │   └── app_theme.dart
+│   └── widgets/              # UI components
+│       ├── score_card.dart
+│       ├── control_button.dart
+│       ├── glass_container.dart
+│       ├── win_dialog.dart
+│       ├── settings_dialog.dart
+│       ├── rename_dialog.dart
+│       └── match_history_dialog.dart
 ├── test/
 │   └── widget_test.dart       # Widget tests
 ├── assets/
@@ -187,14 +208,6 @@ badminton_score/
 ├── android/                   # Android platform code
 ├── ios/                       # iOS platform code
 ├── docs/                      # Generated documentation (this folder)
-│   ├── index.md              # This file
-│   ├── project-overview.md
-│   ├── architecture.md
-│   ├── data-models.md
-│   ├── ui-components.md
-│   ├── asset-inventory.md
-│   ├── source-tree-analysis.md
-│   └── development-guide.md
 ├── pubspec.yaml              # Project configuration
 ├── README.md                 # User documentation
 └── CLAUDE.md                 # AI assistant instructions
@@ -206,9 +219,9 @@ badminton_score/
 
 ### Architecture Pattern
 
-**Single-File Component Architecture:**
-- All code in lib/main.dart (1,580 lines)
-- Clear class-based separation of concerns
+**Modularized Widget-Based Architecture:**
+- Code organized into models/, theme/, and widgets/
+- Clear separation of concerns
 - No external state management libraries
 - Offline-first design
 
@@ -216,11 +229,13 @@ badminton_score/
 - Simple and easy to understand
 - Fast development iteration
 - Clear code organization
-- Minimal complexity
+- Team-friendly development
+- Improved testability
 
-**Trade-offs:**
-- Large file size (consider splitting at 2,000+ lines)
-- Limited parallel development
+**Module Structure:**
+- **models/** - Data classes and constants
+- **theme/** - Theme colors and definitions
+- **widgets/** - Reusable UI components
 
 ### State Management
 
@@ -230,15 +245,19 @@ badminton_score/
 
 **Persistence:**
 - Theme, sound toggle, target score, player names → SharedPreferences
+- Match history (JSON-encoded, up to 50 matches)
 - Scores, games won, undo history → Transient (session-only)
 
 ### Component System
 
-**Builder Pattern:**
-- `_buildScoreButton()` - Large score display
-- `_buildControlButton()` - Outlined action buttons
-- `_buildMenuButton()` - Dual-gesture menu access
-- `_buildGridItem()` - Consistent padding wrapper
+**Widget Library:**
+- ScoreCard - Player score display with gestures
+- ControlButton - Action buttons with icons
+- GlassContainer - Glassmorphic wrapper component
+- WinDialog - Win celebration modal
+- SettingsDialog - Game settings modal
+- RenameDialog - Player name input
+- MatchHistoryDialog - Match history display
 
 **Responsive Design:**
 - FittedBox for all text (prevents overflow)
@@ -390,7 +409,7 @@ flutter build ios --release --no-codesign
 | **Audio Latency** | <50ms (preloaded) |
 | **Hot Reload** | <1s |
 | **Build Time** | ~30s |
-| **Lines of Code** | 1,580 |
+| **Lines of Code** | ~1,250+ (13 files) |
 | **Dependencies** | 3 runtime |
 
 ---
@@ -523,4 +542,4 @@ Include:
 **Documentation Generated:** BMAD document-project workflow
 **Workflow Version:** 1.2.0
 **Scan Level:** Exhaustive
-**Generated:** 2026-01-16
+**Updated:** 2026-01-24
