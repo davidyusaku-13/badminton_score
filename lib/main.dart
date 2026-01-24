@@ -4,196 +4,17 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
-// Constants
-class AppConstants {
-  static const int scoreSectionFlex = 75;
-  static const int controlSectionFlex = 25;
-  static const double scoreTextSize = 256;
-  static const double controlTextSize = 50;
-  static const double buttonTextSize = 30;
-  static const EdgeInsets gridPadding =
-      EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0);
-
-  // Badminton rules
-  static const int minTargetScore = 5;
-  static const int defaultTargetScore = 21;
-  static const int maxScoreOffset = 9; // maxScore = targetScore + 9
-  static const int minWinMargin = 2;
-
-  // Undo history limit
-  static const int maxUndoHistory = 10;
-
-  // Gesture thresholds
-  static const double minSwipeVelocity = 500;
-
-  // UI thresholds
-  static const int highScoreThreshold = 10;
-  static const double controlButtonHeight = 56;
-}
-
-class ThemeKeys {
-  static const String light = 'light';
-  static const String minimal = 'minimal';
-  static const String energy = 'energy';
-  static const String court = 'court';
-  static const String champion = 'champion';
-  static const String defaultTheme = light;
-}
-
-class ThemeColors {
-  final String name;
-  final Color background;
-  final Color primary;
-  final Color secondary;
-  final Color surface;
-  final Color onSurface;
-  final Color accent;
-  final Color gamePoint;
-
-  const ThemeColors({
-    required this.name,
-    required this.background,
-    required this.primary,
-    required this.secondary,
-    required this.surface,
-    required this.onSurface,
-    required this.accent,
-    required this.gamePoint,
-  });
-}
-
-class AppThemes {
-  static const Map<String, ThemeColors> themes = {
-    'light': ThemeColors(
-      name: 'Light',
-      background: Color(0xFFFAFAFA),
-      primary: Color(0xFFFF8A50),
-      secondary: Color(0xFFFFB74D),
-      surface: Color(0xFFE0E0E0),
-      onSurface: Color(0xFF212121),
-      accent: Color(0xFFFF6D00),
-      gamePoint: Color(0xFFFFD700),
-    ),
-    'minimal': ThemeColors(
-      name: 'Minimal',
-      background: Color(0xFFFFFFFF),
-      primary: Color(0xFF757575),
-      secondary: Color(0xFF9E9E9E),
-      surface: Color(0xFFF5F5F5),
-      onSurface: Color(0xFF212121),
-      accent: Color(0xFF616161),
-      gamePoint: Color(0xFFFFC107),
-    ),
-    'energy': ThemeColors(
-      name: 'Energy',
-      background: Color(0xFFFFF8E1),
-      primary: Color(0xFFFF5722),
-      secondary: Color(0xFFFF9800),
-      surface: Color(0xFFFFECB3),
-      onSurface: Color(0xFF212121),
-      accent: Color(0xFFE64A19),
-      gamePoint: Color(0xFFFFD600),
-    ),
-    'court': ThemeColors(
-      name: 'Court',
-      background: Color(0xFFE8F5E9),
-      primary: Color(0xFF4CAF50),
-      secondary: Color(0xFF8BC34A),
-      surface: Color(0xFFC8E6C9),
-      onSurface: Color(0xFF1B5E20),
-      accent: Color(0xFF388E3C),
-      gamePoint: Color(0xFFFFEB3B),
-    ),
-    'champion': ThemeColors(
-      name: 'Champion',
-      background: Color(0xFFFCE4EC),
-      primary: Color(0xFFE91E63),
-      secondary: Color(0xFFFF5722),
-      surface: Color(0xFFF8BBD9),
-      onSurface: Color(0xFF880E4F),
-      accent: Color(0xFFC2185B),
-      gamePoint: Color(0xFFFFD700),
-    ),
-  };
-
-  // Cached theme keys list for performance
-  static final List<String> themeKeys = themes.keys.toList();
-}
-
-// Score action for undo functionality
-class ScoreAction {
-  final bool isLeft;
-  final int previousScore;
-  final int newScore;
-  final bool previousServerWasLeft;
-
-  const ScoreAction({
-    required this.isLeft,
-    required this.previousScore,
-    required this.newScore,
-    required this.previousServerWasLeft,
-  });
-}
-
-// Game state management
-class GameState {
-  final int leftScore;
-  final int rightScore;
-  final int leftGames;
-  final int rightGames;
-  final bool isLeftServing;
-  final int targetScore;
-  final String leftPlayerName;
-  final String rightPlayerName;
-
-  const GameState({
-    required this.leftScore,
-    required this.rightScore,
-    required this.leftGames,
-    required this.rightGames,
-    required this.isLeftServing,
-    required this.targetScore,
-    required this.leftPlayerName,
-    required this.rightPlayerName,
-  });
-
-  int get totalPoints => leftScore + rightScore;
-
-  GameState copyWith({
-    int? leftScore,
-    int? rightScore,
-    int? leftGames,
-    int? rightGames,
-    bool? isLeftServing,
-    int? targetScore,
-    String? leftPlayerName,
-    String? rightPlayerName,
-  }) {
-    return GameState(
-      leftScore: leftScore ?? this.leftScore,
-      rightScore: rightScore ?? this.rightScore,
-      leftGames: leftGames ?? this.leftGames,
-      rightGames: rightGames ?? this.rightGames,
-      isLeftServing: isLeftServing ?? this.isLeftServing,
-      targetScore: targetScore ?? this.targetScore,
-      leftPlayerName: leftPlayerName ?? this.leftPlayerName,
-      rightPlayerName: rightPlayerName ?? this.rightPlayerName,
-    );
-  }
-
-  factory GameState.initial() {
-    return const GameState(
-      leftScore: 0,
-      rightScore: 0,
-      leftGames: 0,
-      rightGames: 0,
-      isLeftServing: true,
-      targetScore: AppConstants.defaultTargetScore,
-      leftPlayerName: 'Left',
-      rightPlayerName: 'Right',
-    );
-  }
-}
+import 'theme/theme.dart';
+import 'models/app_constants.dart';
+import 'models/score_action.dart';
+import 'models/match_result.dart';
+import 'widgets/score_card.dart';
+import 'widgets/control_button.dart';
+import 'widgets/glass_container.dart';
+import 'widgets/win_dialog.dart';
+import 'widgets/settings_dialog.dart';
+import 'widgets/rename_dialog.dart';
+import 'widgets/match_history_dialog.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -216,7 +37,7 @@ class BadmintonScoreApp extends StatefulWidget {
 }
 
 class _BadmintonScoreAppState extends State<BadmintonScoreApp> {
-  String currentTheme = ThemeKeys.defaultTheme;
+  String currentThemeKey = AppThemes.themeKeys.last; // Default to Midnight
   bool _isLoading = true;
   SharedPreferences? _prefs;
 
@@ -234,16 +55,15 @@ class _BadmintonScoreAppState extends State<BadmintonScoreApp> {
   Future<void> _loadTheme() async {
     try {
       final prefs = await _getPrefs();
-      final savedTheme = prefs.getString('theme') ?? ThemeKeys.defaultTheme;
+      final savedTheme = prefs.getString('theme') ?? 'midnight';
       setState(() {
-        currentTheme = savedTheme;
+        currentThemeKey = AppThemes.themes.containsKey(savedTheme) ? savedTheme : 'midnight';
         _isLoading = false;
       });
     } catch (e) {
-      // If loading fails, use default theme
       debugPrint('Theme loading failed: $e');
       setState(() {
-        currentTheme = ThemeKeys.defaultTheme;
+        currentThemeKey = 'midnight';
         _isLoading = false;
       });
     }
@@ -254,13 +74,12 @@ class _BadmintonScoreAppState extends State<BadmintonScoreApp> {
       final prefs = await _getPrefs();
       await prefs.setString('theme', themeName);
       setState(() {
-        currentTheme = themeName;
+        currentThemeKey = themeName;
       });
     } catch (e) {
-      // If saving fails, still update UI
       debugPrint('Theme save failed: $e');
       setState(() {
-        currentTheme = themeName;
+        currentThemeKey = themeName;
       });
     }
   }
@@ -279,8 +98,9 @@ class _BadmintonScoreAppState extends State<BadmintonScoreApp> {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(fontFamily: 'Poppins'),
       home: ScoreScreen(
-        currentTheme: currentTheme,
+        currentThemeKey: currentThemeKey,
         onThemeChange: changeTheme,
       ),
     );
@@ -288,12 +108,12 @@ class _BadmintonScoreAppState extends State<BadmintonScoreApp> {
 }
 
 class ScoreScreen extends StatefulWidget {
-  final String currentTheme;
+  final String currentThemeKey;
   final Function(String) onThemeChange;
 
   const ScoreScreen({
     super.key,
-    required this.currentTheme,
+    required this.currentThemeKey,
     required this.onThemeChange,
   });
 
@@ -301,45 +121,32 @@ class ScoreScreen extends StatefulWidget {
   State<ScoreScreen> createState() => _ScoreScreenState();
 }
 
-class _ScoreScreenState extends State<ScoreScreen>
-    with SingleTickerProviderStateMixin {
+class _ScoreScreenState extends State<ScoreScreen> with SingleTickerProviderStateMixin {
+  
+  // Game State
   int leftScore = 0;
   int rightScore = 0;
   int leftGames = 0;
   int rightGames = 0;
-  bool soundEnabled = true;
   bool isLeftServing = true;
-  int totalPoints = 0;
   int targetScore = AppConstants.defaultTargetScore;
   String leftPlayerName = 'Left';
   String rightPlayerName = 'Right';
-
-  // Swipe hint state
-  bool _showSwipeHint = false;
-
+  
+  // Settings
+  bool soundEnabled = true;
+  
+  // Match History
+  List<MatchResult> _matchHistory = [];
+  
   // Undo history
   final List<ScoreAction> _undoHistory = [];
 
-  // Animation controllers
-  late AnimationController _scaleController;
-  late Animation<double> _scaleAnimation;
-  bool _isLeftScaling = false;
-  bool _isRightScaling = false;
-
-  // Score change animation controllers
-  late AnimationController _leftScoreController;
-  late AnimationController _rightScoreController;
-  late Animation<double> _leftScoreAnimation;
-  late Animation<double> _rightScoreAnimation;
-
-  // Game point pulse animation
-  late AnimationController _gamePointController;
-  late Animation<double> _gamePointAnimation;
-
+  // Audio
   late AudioPlayer _player;
   late final Source _beepSource;
-
-  // Cached SharedPreferences instance
+  
+  // Cached SharedPreferences
   SharedPreferences? _prefs;
 
   @override
@@ -349,129 +156,99 @@ class _ScoreScreenState extends State<ScoreScreen>
     _beepSource = AssetSource('beep.mp3');
     _preloadAudio();
     _loadPreferences();
-
-    // Setup scale animation
-    _scaleController = AnimationController(
-      duration: const Duration(milliseconds: 100),
-      vsync: this,
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.easeInOut),
-    );
-
-    // Setup score change animations
-    _leftScoreController = AnimationController(
-      duration: const Duration(milliseconds: 150),
-      vsync: this,
-    );
-    _leftScoreAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
-      CurvedAnimation(parent: _leftScoreController, curve: Curves.easeOut),
-    );
-
-    _rightScoreController = AnimationController(
-      duration: const Duration(milliseconds: 150),
-      vsync: this,
-    );
-    _rightScoreAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
-      CurvedAnimation(parent: _rightScoreController, curve: Curves.easeOut),
-    );
-
-    // Setup game point pulse animation
-    _gamePointController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
-    _gamePointAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _gamePointController, curve: Curves.easeInOut),
-    );
-
-    // Check and show swipe hint if needed
-    _checkSwipeHint();
+    _loadMatchHistory();
   }
+  
+  ThemeColors get theme => AppThemes.themes[widget.currentThemeKey]!;
 
-  Future<SharedPreferences> _getPrefs() async {
+  Future<void> _getPrefs() async {
     _prefs ??= await SharedPreferences.getInstance();
-    return _prefs!;
   }
 
   Future<void> _preloadAudio() async {
     try {
-      // Preload the audio source to reduce first-play latency
       await _player.setSource(_beepSource);
     } catch (e) {
-      // If audio preloading fails, continue without audio
-      // Audio will still be attempted on first play
       debugPrint('Audio preload failed: $e');
     }
   }
 
   Future<void> _loadPreferences() async {
+    await _getPrefs();
+    if (_prefs == null) return; // Guard against null
     try {
-      final prefs = await _getPrefs();
       setState(() {
-        soundEnabled = prefs.getBool('soundEnabled') ?? true;
-        targetScore =
-            prefs.getInt('targetScore') ?? AppConstants.defaultTargetScore;
-        leftPlayerName = prefs.getString('leftPlayerName') ?? 'Left';
-        rightPlayerName = prefs.getString('rightPlayerName') ?? 'Right';
+        soundEnabled = _prefs?.getBool('soundEnabled') ?? true;
+        targetScore = _prefs?.getInt('targetScore') ?? AppConstants.defaultTargetScore;
+        leftPlayerName = _prefs?.getString('leftPlayerName') ?? 'Left';
+        rightPlayerName = _prefs?.getString('rightPlayerName') ?? 'Right';
       });
     } catch (e) {
-      // If loading fails, use default values
       debugPrint('Preferences loading failed: $e');
-      setState(() {
-        soundEnabled = true;
-        targetScore = AppConstants.defaultTargetScore;
-        leftPlayerName = 'Left';
-        rightPlayerName = 'Right';
-      });
     }
   }
 
   Future<void> _savePreferences() async {
+     if (_prefs == null) return;
     try {
-      final prefs = await _getPrefs();
-      await prefs.setBool('soundEnabled', soundEnabled);
-      await prefs.setInt('targetScore', targetScore);
-      await prefs.setString('leftPlayerName', leftPlayerName);
-      await prefs.setString('rightPlayerName', rightPlayerName);
+      await _prefs!.setBool('soundEnabled', soundEnabled);
+      await _prefs!.setInt('targetScore', targetScore);
+      await _prefs!.setString('leftPlayerName', leftPlayerName);
+      await _prefs!.setString('rightPlayerName', rightPlayerName);
     } catch (e) {
-      // If saving fails, continue silently
-      // User preferences will still work for current session
       debugPrint('Preferences save failed: $e');
     }
   }
 
-  Future<void> _checkSwipeHint() async {
+  Future<void> _loadMatchHistory() async {
+    await _getPrefs();
+    if (_prefs == null) return;
     try {
-      final prefs = await _getPrefs();
-      final hasSeenHint = prefs.getBool('hasSeenSwipeHint') ?? false;
-      if (!hasSeenHint) {
-        // Show hint after 2 seconds
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) {
-            setState(() => _showSwipeHint = true);
-          }
-          // Hide after 3 seconds
-          Future.delayed(const Duration(seconds: 3), () {
-            if (mounted) {
-              setState(() => _showSwipeHint = false);
-            }
-          });
+      final json = _prefs?.getString('matchHistory');
+      if (json != null && json.isNotEmpty) {
+        setState(() {
+          _matchHistory = MatchResult.decodeList(json);
         });
       }
     } catch (e) {
-      // If loading fails, don't show hint
-      debugPrint('Swipe hint check failed: $e');
+      debugPrint('Match history loading failed: $e');
     }
   }
 
-  Future<void> _markSwipeHintAsSeen() async {
+  Future<void> _saveMatchHistory() async {
+    if (_prefs == null) return;
     try {
-      final prefs = await _getPrefs();
-      await prefs.setBool('hasSeenSwipeHint', true);
+      final json = MatchResult.encodeList(_matchHistory);
+      await _prefs!.setString('matchHistory', json);
     } catch (e) {
-      debugPrint('Swipe hint save failed: $e');
+      debugPrint('Match history save failed: $e');
     }
+  }
+
+  void _addMatchResult(bool isLeftWinner) {
+    final result = MatchResult(
+      date: DateTime.now(),
+      leftScore: leftScore,
+      rightScore: rightScore,
+      leftPlayerName: leftPlayerName,
+      rightPlayerName: rightPlayerName,
+      winner: isLeftWinner ? leftPlayerName : rightPlayerName,
+    );
+    setState(() {
+      _matchHistory.add(result);
+      // Keep only last 50 matches
+      if (_matchHistory.length > 50) {
+        _matchHistory = _matchHistory.sublist(_matchHistory.length - 50);
+      }
+    });
+    _saveMatchHistory();
+  }
+
+  void _clearMatchHistory() {
+    setState(() {
+      _matchHistory.clear();
+    });
+    _saveMatchHistory();
   }
 
   Future<void> _beep() async {
@@ -480,183 +257,9 @@ class _ScoreScreenState extends State<ScoreScreen>
         await _player.stop();
         await _player.play(_beepSource);
       } catch (e) {
-        // If audio playback fails, continue silently
         debugPrint('Audio playback failed: $e');
       }
     }
-  }
-
-  Future<void> _stopSound() async {
-    try {
-      await _player.stop();
-    } catch (e) {
-      // If stopping fails, continue silently
-      debugPrint('Audio stop failed: $e');
-    }
-  }
-
-  void _safeAction(VoidCallback action) {
-    _stopSound();
-    action();
-  }
-
-  void _updateServingIndicator(bool scoringTeamIsLeft) {
-    // Badminton serving rules: the team that scores the point serves next
-    isLeftServing = scoringTeamIsLeft;
-  }
-
-  void _resetServingIndicator() {
-    // Reset to left serving at start of game
-    isLeftServing = true;
-  }
-
-  bool _checkWin(int score, int opponentScore) {
-    final dynamicMaxScore = targetScore + AppConstants.maxScoreOffset;
-    // Win at maxScore regardless of margin (sudden death cap)
-    if (score >= dynamicMaxScore) return true;
-    // Win at targetScore with required margin
-    if (score >= targetScore &&
-        score - opponentScore >= AppConstants.minWinMargin) {
-      return true;
-    }
-    return false;
-  }
-
-  bool _isGamePoint(int score, int opponentScore) {
-    // Check if scoring one more point would win
-    return _checkWin(score + 1, opponentScore);
-  }
-
-  void _updateGamePointAnimation() {
-    final leftIsGamePoint = _isGamePoint(leftScore, rightScore);
-    final rightIsGamePoint = _isGamePoint(rightScore, leftScore);
-
-    if (leftIsGamePoint || rightIsGamePoint) {
-      if (!_gamePointController.isAnimating) {
-        _gamePointController.repeat(reverse: true);
-      }
-    } else {
-      _gamePointController.stop();
-      _gamePointController.reset();
-    }
-  }
-
-  void _showWinCelebration(bool isLeftWinner) {
-    final winner = isLeftWinner ? leftPlayerName : rightPlayerName;
-    HapticFeedback.heavyImpact();
-
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.black87,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Column(
-            children: [
-              const Icon(
-                Icons.emoji_events,
-                color: Colors.amber,
-                size: 48,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                "Game Won!",
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  color: Colors.amber,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                "$winner Wins!",
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white10,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  "$leftScore - $rightScore",
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    color: Colors.white,
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "First to $targetScore",
-                style: const TextStyle(
-                  fontFamily: 'Poppins',
-                  color: Colors.white54,
-                  fontSize: 14,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              child: const Text("Continue Match",
-                  style: TextStyle(fontFamily: 'Poppins', color: Colors.grey)),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.amber,
-                foregroundColor: Colors.black87,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text("New Game",
-                  style: TextStyle(
-                      fontFamily: 'Poppins', fontWeight: FontWeight.w600)),
-              onPressed: () {
-                // Record game win
-                setState(() {
-                  if (isLeftWinner) {
-                    leftGames++;
-                  } else {
-                    rightGames++;
-                  }
-                  leftScore = 0;
-                  rightScore = 0;
-                  totalPoints = 0;
-                  _undoHistory.clear();
-                  _resetServingIndicator();
-                });
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
   }
 
   void _incrementScore(bool isLeft) {
@@ -669,10 +272,8 @@ class _ScoreScreenState extends State<ScoreScreen>
       } else {
         rightScore++;
       }
-      totalPoints++;
-      _updateServingIndicator(isLeft);
+      isLeftServing = isLeft;
 
-      // Add to undo history
       _undoHistory.add(ScoreAction(
         isLeft: isLeft,
         previousScore: previousScore,
@@ -684,19 +285,8 @@ class _ScoreScreenState extends State<ScoreScreen>
       }
     });
 
-    // Trigger score change animation
-    if (isLeft) {
-      _leftScoreController.forward().then((_) => _leftScoreController.reverse());
-    } else {
-      _rightScoreController.forward().then((_) => _rightScoreController.reverse());
-    }
-
-    // Update game point animation state
-    _updateGamePointAnimation();
-
     _beep();
 
-    // Check for win
     if (_checkWin(leftScore, rightScore)) {
       _showWinCelebration(true);
     } else if (_checkWin(rightScore, leftScore)) {
@@ -705,7 +295,7 @@ class _ScoreScreenState extends State<ScoreScreen>
   }
 
   void _decrementScore(bool isLeft) {
-    final currentScore = isLeft ? leftScore : rightScore;
+     final currentScore = isLeft ? leftScore : rightScore;
     if (currentScore <= 0) return;
 
     setState(() {
@@ -714,12 +304,54 @@ class _ScoreScreenState extends State<ScoreScreen>
       } else {
         rightScore--;
       }
-      totalPoints--;
-      // Note: Decrements are manual corrections, not tracked in undo history
     });
+  }
 
-    // Update game point animation state
-    _updateGamePointAnimation();
+  bool _checkWin(int score, int opponentScore) {
+    final dynamicMaxScore = targetScore + AppConstants.maxScoreOffset;
+    if (score >= dynamicMaxScore) return true;
+    if (score >= targetScore &&
+        score - opponentScore >= AppConstants.minWinMargin) {
+      return true;
+    }
+    return false;
+  }
+
+  void _showWinCelebration(bool isLeftWinner) {
+     final winner = isLeftWinner ? leftPlayerName : rightPlayerName;
+    HapticFeedback.heavyImpact();
+    
+    // Save match result to history
+    _addMatchResult(isLeftWinner);
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => WinDialog(
+        winnerName: winner, 
+        leftScore: leftScore, 
+        rightScore: rightScore, 
+        targetScore: targetScore, 
+        theme: theme, 
+        onNewGame: () {
+             setState(() {
+                  if (isLeftWinner) {
+                    leftGames++;
+                  } else {
+                    rightGames++;
+                  }
+                  leftScore = 0;
+                  rightScore = 0;
+                  _undoHistory.clear();
+                  isLeftServing = true;
+                });
+                Navigator.of(context).pop();
+        }, 
+        onContinue: () {
+             Navigator.of(context).pop();
+        }
+      ),
+    );
   }
 
   void _undo() {
@@ -732,8 +364,6 @@ class _ScoreScreenState extends State<ScoreScreen>
       } else {
         rightScore = lastAction.previousScore;
       }
-      // Recalculate totalPoints from current scores
-      totalPoints = leftScore + rightScore;
       isLeftServing = lastAction.previousServerWasLeft;
     });
     HapticFeedback.lightImpact();
@@ -749,204 +379,143 @@ class _ScoreScreenState extends State<ScoreScreen>
       leftGames = rightGames;
       rightGames = tempGames;
 
+      final tempName = leftPlayerName;
+      leftPlayerName = rightPlayerName;
+      rightPlayerName = tempName;
+
       isLeftServing = !isLeftServing;
     });
+     _savePreferences(); // Save name swap
     HapticFeedback.mediumImpact();
   }
-
-  void _quickReset() {
-    // Check if scores are high enough to warrant undo option
-    if (leftScore > AppConstants.highScoreThreshold || rightScore > AppConstants.highScoreThreshold) {
-      final previousLeft = leftScore;
-      final previousRight = rightScore;
-      final previousServerWasLeft = isLeftServing;
-      final previousUndoHistory = List<ScoreAction>.from(_undoHistory);
-
-      setState(() {
+  
+  void _resetGame() {
+       setState(() {
         leftScore = 0;
         rightScore = 0;
-        totalPoints = 0;
         _undoHistory.clear();
-        _resetServingIndicator();
+        isLeftServing = true;
       });
       HapticFeedback.mediumImpact();
-
-      // Show snackbar with undo option
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content:
-              const Text('Scores reset', style: TextStyle(fontFamily: 'Poppins')),
-          duration: const Duration(seconds: 4),
-          action: SnackBarAction(
-            label: 'UNDO',
-            onPressed: () {
-              setState(() {
-                leftScore = previousLeft;
-                rightScore = previousRight;
-                totalPoints = previousLeft + previousRight;
-                isLeftServing = previousServerWasLeft;
-                _undoHistory.clear();
-                _undoHistory.addAll(previousUndoHistory);
-              });
-            },
-          ),
-        ),
+        SnackBar(content: const Text("Game Reset", style: TextStyle(fontFamily: 'Poppins')), duration: Duration(seconds: 1),)
       );
-    } else {
-      setState(() {
-        leftScore = 0;
-        rightScore = 0;
-        totalPoints = 0;
-        _undoHistory.clear();
-        _resetServingIndicator();
-      });
-      HapticFeedback.mediumImpact();
-    }
   }
 
-  void _nextTheme() {
-    final currentIndex = AppThemes.themeKeys.indexOf(widget.currentTheme);
-    final nextIndex = (currentIndex + 1) % AppThemes.themeKeys.length;
-    widget.onThemeChange(AppThemes.themeKeys[nextIndex]);
-    HapticFeedback.lightImpact();
+  void _showSettings() {
+    showDialog(
+        context: context,
+        builder: (context) => SettingsDialog(
+            theme: theme,
+            targetScore: targetScore,
+            onTargetScoreChanged: (val) {
+                setState(() => targetScore = val);
+                _savePreferences();
+                Navigator.pop(context);
+            },
+            soundEnabled: soundEnabled,
+            onSoundChanged: (val) {
+                 setState(() => soundEnabled = val);
+                 _savePreferences();
+            },
+        ));
   }
-
-  void _previousTheme() {
-    final currentIndex = AppThemes.themeKeys.indexOf(widget.currentTheme);
-    final previousIndex = (currentIndex - 1 + AppThemes.themeKeys.length) %
-        AppThemes.themeKeys.length;
-    widget.onThemeChange(AppThemes.themeKeys[previousIndex]);
-    HapticFeedback.lightImpact();
+  
+  void _showRenameDialog() {
+      showDialog(
+        context: context,
+        builder: (context) => RenameDialog(
+            theme: theme,
+            leftName: leftPlayerName,
+            rightName: rightPlayerName,
+            onSave: (l, r) {
+                setState(() {
+                    leftPlayerName = l;
+                    rightPlayerName = r;
+                });
+                _savePreferences();
+            }
+        )
+      );
   }
-
-  Future<void> _animateScoreButton(bool isLeft) async {
-    setState(() {
-      if (isLeft) {
-        _isLeftScaling = true;
-      } else {
-        _isRightScaling = true;
-      }
-    });
-
-    await _scaleController.forward();
-    await _scaleController.reverse();
-
-    setState(() {
-      if (isLeft) {
-        _isLeftScaling = false;
-      } else {
-        _isRightScaling = false;
-      }
-    });
-  }
-
-  Widget _buildMenuButton({
-    required Color color,
-    required Color textColor,
-  }) {
-    return Semantics(
-      label: 'Menu button. Tap for menu, long press to reset scores',
-      button: true,
-      child: GestureDetector(
-        onTap: () {
-          _safeAction(() => _showMenuDialog());
-        },
-        onLongPress: () {
-          HapticFeedback.mediumImpact();
-          _safeAction(() => _quickReset());
-        },
-        child: Container(
-          width: double.infinity,
-          height: double.infinity,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Center(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                "⋮",
-                style: TextStyle(
-                  fontSize: AppConstants.controlTextSize,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'Poppins',
-                  color: textColor,
+  
+  void _showMenuDialog() {
+       showDialog(
+        context: context,
+        builder: (context) => Dialog(
+          backgroundColor: Colors.transparent,
+          child: GlassContainer(
+            borderRadius: BorderRadius.circular(24),
+            color: theme.surface,
+            opacity: 0.95,
+            padding: const EdgeInsets.all(16),
+             child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: Icon(Icons.person, color: theme.textPrimary),
+                  title: Text("Players", style: TextStyle(color: theme.textPrimary)),
+                  onTap: () { Navigator.pop(context); _showRenameDialog(); }
                 ),
-              ),
-            ),
+                 ListTile(
+                  leading: Icon(Icons.refresh, color: theme.textPrimary),
+                  title: Text("Reset Game", style: TextStyle(color: theme.textPrimary)),
+                  onTap: () { Navigator.pop(context); _resetGame(); }
+                ),
+                 ListTile(
+                  leading: Icon(Icons.palette, color: theme.textPrimary),
+                  title: Text("Theme", style: TextStyle(color: theme.textPrimary)),
+                  onTap: () { Navigator.pop(context); _showThemeSelector(); }
+                ),
+                 ListTile(
+                  leading: Icon(Icons.history, color: theme.textPrimary),
+                  title: Text("History", style: TextStyle(color: theme.textPrimary)),
+                  onTap: () { Navigator.pop(context); _showMatchHistoryDialog(); }
+                ),
+                 ListTile(
+                  leading: Icon(Icons.settings, color: theme.textPrimary),
+                  title: Text("Settings", style: TextStyle(color: theme.textPrimary)),
+                  onTap: () { Navigator.pop(context); _showSettings(); }
+                ),
+              ],
+             ),
           ),
         ),
-      ),
-    );
+       );
   }
-
-  @override
-  void dispose() {
-    _player.dispose();
-    _scaleController.dispose();
-    _leftScoreController.dispose();
-    _rightScoreController.dispose();
-    _gamePointController.dispose();
-    super.dispose();
-  }
-
-  void _showResetConfirmation() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Reset Score?",
-              style: TextStyle(fontFamily: 'Poppins')),
-          content: const Text("Are you sure you want to reset both scores?",
-              style: TextStyle(fontFamily: 'Poppins')),
-          actions: [
-            TextButton(
-              child: const Text("No", style: TextStyle(fontFamily: 'Poppins')),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            TextButton(
-              child: const Text("Yes", style: TextStyle(fontFamily: 'Poppins')),
-              onPressed: () {
-                _safeAction(() {
-                  setState(() {
-                    leftScore = 0;
-                    rightScore = 0;
-                    totalPoints = 0;
-                    _undoHistory.clear();
-                    _resetServingIndicator();
-                  });
-                });
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
+  
   void _showThemeSelector() {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Select Theme",
-              style: TextStyle(fontFamily: 'Poppins')),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView(
-              shrinkWrap: true,
-              children: AppThemes.themes.entries.map((entry) {
-                final isSelected = entry.key == widget.currentTheme;
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: GlassContainer(
+          borderRadius: BorderRadius.circular(24),
+          color: theme.surface,
+          opacity: 0.95,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Select Theme",
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: theme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ...AppThemes.themes.entries.map((entry) {
+                final isSelected = entry.key == widget.currentThemeKey;
                 return ListTile(
                   leading: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Theme color preview swatches
                       Container(
-                        width: 20,
-                        height: 20,
+                        width: 20, height: 20,
                         decoration: BoxDecoration(
                           color: entry.value.primary,
                           borderRadius: BorderRadius.circular(4),
@@ -954,20 +523,9 @@ class _ScoreScreenState extends State<ScoreScreen>
                       ),
                       const SizedBox(width: 4),
                       Container(
-                        width: 20,
-                        height: 20,
+                        width: 20, height: 20,
                         decoration: BoxDecoration(
                           color: entry.value.secondary,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Container(
-                        width: 20,
-                        height: 20,
-                        decoration: BoxDecoration(
-                          color: entry.value.background,
-                          border: Border.all(color: Colors.grey),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -977,770 +535,114 @@ class _ScoreScreenState extends State<ScoreScreen>
                     entry.value.name,
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: theme.textPrimary,
                     ),
                   ),
-                  trailing: isSelected
+                  trailing: isSelected 
                       ? Icon(Icons.check, color: entry.value.primary)
                       : null,
                   onTap: () {
                     widget.onThemeChange(entry.key);
-                    Navigator.of(context).pop();
+                    Navigator.pop(context);
                   },
                 );
               }).toList(),
-            ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
+  }
+  
+  void _showMatchHistoryDialog() {
+      showDialog(
+        context: context, 
+        builder: (context) => MatchHistoryDialog(
+          theme: theme,
+          history: _matchHistory,
+          onClearHistory: _clearMatchHistory,
+        ),
+      );
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppThemes.themes[widget.currentTheme] ??
-        AppThemes.themes[ThemeKeys.defaultTheme]!;
-
     return Scaffold(
-      backgroundColor: theme.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildScoreSection(theme),
-            _buildControlSection(theme),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildScoreSection(ThemeColors theme) {
-    return Expanded(
-      flex: AppConstants.scoreSectionFlex,
-      child: Stack(
-        children: [
-          GestureDetector(
-            onPanEnd: (details) {
-              final velocity = details.velocity.pixelsPerSecond;
-              final isHorizontalSwipe = velocity.dx.abs() > velocity.dy.abs();
-              final isFastSwipe = velocity.dx.abs() > AppConstants.minSwipeVelocity;
-
-              if (isHorizontalSwipe && isFastSwipe) {
-                // Mark hint as seen on first swipe
-                if (_showSwipeHint) {
-                  _markSwipeHintAsSeen();
-                  setState(() => _showSwipeHint = false);
-                }
-
-                if (velocity.dx > 0) {
-                  _previousTheme();
-                } else {
-                  _nextTheme();
-                }
-              }
-            },
-        child: Column(
-          children: [
-            // Games counter row
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Semantics(
-                      label: '$leftPlayerName games won: $leftGames',
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            leftPlayerName,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: theme.onSurface.withValues(alpha: 0.9),
-                              fontFamily: 'Poppins',
-                              fontWeight: FontWeight.w600,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            "Games: $leftGames",
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: theme.onSurface.withValues(alpha: 0.6),
-                              fontFamily: 'Poppins',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Serving indicator and target score
-                  Semantics(
-                    label: isLeftServing
-                        ? '$leftPlayerName serving'
-                        : '$rightPlayerName serving',
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          "Playing to $targetScore",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: theme.onSurface.withValues(alpha: 0.5),
-                            fontFamily: 'Poppins',
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        AnimatedAlign(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                          alignment: isLeftServing ? Alignment.centerLeft : Alignment.centerRight,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: const Text('🏸', style: TextStyle(fontSize: 24)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Semantics(
-                      label: '$rightPlayerName games won: $rightGames',
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            rightPlayerName,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: theme.onSurface.withValues(alpha: 0.9),
-                              fontFamily: 'Poppins',
-                              fontWeight: FontWeight.w600,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            "Games: $rightGames",
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: theme.onSurface.withValues(alpha: 0.6),
-                              fontFamily: 'Poppins',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Score buttons
-            Expanded(
-              child: Row(
-                children: [
-                  _buildGridItem(
-                    _buildScoreButton(
-                      score: leftScore,
-                      onTap: () {
-                        _animateScoreButton(true);
-                        _incrementScore(true);
-                      },
-                      color: theme.primary,
-                      textColor: theme.onSurface,
-                      isScaling: _isLeftScaling,
-                      isServing: isLeftServing,
-                      servingColor: theme.accent,
-                      isGamePoint: _isGamePoint(leftScore, rightScore),
-                      gamePointColor: theme.gamePoint,
-                      isLeft: true,
-                    ),
-                  ),
-                  _buildGridItem(
-                    _buildScoreButton(
-                      score: rightScore,
-                      onTap: () {
-                        _animateScoreButton(false);
-                        _incrementScore(false);
-                      },
-                      color: theme.secondary,
-                      textColor: theme.onSurface,
-                      isScaling: _isRightScaling,
-                      isServing: !isLeftServing,
-                      servingColor: theme.accent,
-                      isGamePoint: _isGamePoint(rightScore, leftScore),
-                      gamePointColor: theme.gamePoint,
-                      isLeft: false,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      // Swipe hint overlay
-      if (_showSwipeHint)
-        Positioned(
-          top: 100,
-          left: 0,
-          right: 0,
-          child: AnimatedOpacity(
-            opacity: _showSwipeHint ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 300),
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.black87,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 10,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
+      body: Container(
+        decoration: BoxDecoration(gradient: theme.backgroundGradient),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // TOP: Score Section (75%)
+              Expanded(
+                flex: AppConstants.scoreSectionFlex,
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.swipe, color: theme.gamePoint, size: 24),
-                    const SizedBox(width: 12),
-                    const Text(
-                      'Swipe to change theme',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w600,
+                    // Left Player
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: ScoreCard(
+                          score: leftScore,
+                          playerName: leftPlayerName,
+                          isServing: isLeftServing,
+                          isWinner: _checkWin(leftScore, rightScore),
+                          onTap: () => _incrementScore(true),
+                          onSwipeDown: () => _decrementScore(true),
+                          onNameTap: _showRenameDialog,
+                          theme: theme,
+                        ),
+                      ),
+                    ),
+                    // Right Player
+                    Expanded(
+                       child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: ScoreCard(
+                          score: rightScore,
+                          playerName: rightPlayerName,
+                          isServing: !isLeftServing,
+                          isWinner: _checkWin(rightScore, leftScore),
+                          onTap: () => _incrementScore(false),
+                          onSwipeDown: () => _decrementScore(false),
+                          onNameTap: _showRenameDialog,
+                          theme: theme,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-          ),
-        ),
-    ],
-    ),
-  );
-}
-
-  Widget _buildControlSection(ThemeColors theme) {
-    return Expanded(
-      flex: AppConstants.controlSectionFlex,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Left minus button
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: SizedBox(
-                  height: AppConstants.controlButtonHeight,
-                  child: _buildControlButton(
-                    text: "-",
-                    onTap: () {
-                      _safeAction(() => _decrementScore(true));
-                    },
-                    color: theme.surface,
-                    textColor: theme.onSurface,
-                    semanticsLabel: 'Decrease left score',
+              
+              // BOTTOM: Control Section (25%)
+              Expanded(
+                flex: AppConstants.controlSectionFlex,
+                 child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                       Expanded(child: ControlButton(icon: Icons.remove, label: "Left -1", onTap: () => _decrementScore(true), theme: theme)),
+                       const SizedBox(width: 8),
+                       Expanded(child: ControlButton(icon: Icons.undo, label: "Undo", onTap: _undo, theme: theme)),
+                       const SizedBox(width: 8),
+                       Expanded(child: ControlButton(icon: Icons.menu, label: "Menu", onTap: _showMenuDialog, theme: theme)),
+                       const SizedBox(width: 8),
+                       Expanded(child: ControlButton(icon: Icons.swap_horiz, label: "Swap", onTap: _swapSides, theme: theme)),
+                       const SizedBox(width: 8),
+                       Expanded(child: ControlButton(icon: Icons.remove, label: "Right -1", onTap: () => _decrementScore(false), theme: theme)),
+                    ],
                   ),
-                ),
-              ),
-            ),
-            // Undo button
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: SizedBox(
-                  height: AppConstants.controlButtonHeight,
-                  child: _buildControlButton(
-                    text: "↩",
-                    onTap: () {
-                      _safeAction(() => _undo());
-                    },
-                    color: theme.surface,
-                    textColor: theme.onSurface,
-                    semanticsLabel: 'Undo last score change',
-                    enabled: _undoHistory.isNotEmpty,
-                  ),
-                ),
-              ),
-            ),
-            // Menu button
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: SizedBox(
-                  height: AppConstants.controlButtonHeight,
-                  child: _buildMenuButton(
-                    color: theme.accent,
-                    textColor: theme.onSurface,
-                  ),
-                ),
-              ),
-            ),
-            // Swap sides button
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: SizedBox(
-                  height: AppConstants.controlButtonHeight,
-                  child: _buildControlButton(
-                    text: "⇄",
-                    onTap: () {
-                      _safeAction(() => _swapSides());
-                    },
-                    color: theme.surface,
-                    textColor: theme.onSurface,
-                    semanticsLabel: 'Swap sides',
-                  ),
-                ),
-              ),
-            ),
-            // Right minus button
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: SizedBox(
-                  height: AppConstants.controlButtonHeight,
-                  child: _buildControlButton(
-                    text: "-",
-                    onTap: () {
-                      _safeAction(() => _decrementScore(false));
-                    },
-                    color: theme.surface,
-                    textColor: theme.onSurface,
-                    semanticsLabel: 'Decrease right score',
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showMenuDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Menu", style: TextStyle(fontFamily: 'Poppins')),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.person),
-                title: const Text("Player Names",
-                    style: TextStyle(fontFamily: 'Poppins')),
-                subtitle: Text("$leftPlayerName vs $rightPlayerName",
-                    style: TextStyle(fontFamily: 'Poppins', fontSize: 12)),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _showPlayerNamesDialog();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.refresh),
-                title: const Text("Reset Score",
-                    style: TextStyle(fontFamily: 'Poppins')),
-                onTap: () {
-                  _safeAction(() {
-                    Navigator.of(context).pop();
-                    _showResetConfirmation();
-                  });
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.restart_alt),
-                title: const Text("Reset Match",
-                    style: TextStyle(fontFamily: 'Poppins')),
-                subtitle: const Text("Reset scores and games",
-                    style: TextStyle(fontFamily: 'Poppins', fontSize: 12)),
-                onTap: () {
-                  _safeAction(() {
-                    setState(() {
-                      leftScore = 0;
-                      rightScore = 0;
-                      leftGames = 0;
-                      rightGames = 0;
-                      totalPoints = 0;
-                      _undoHistory.clear();
-                      _resetServingIndicator();
-                    });
-                    Navigator.of(context).pop();
-                  });
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.settings),
-                title: const Text("Game Settings",
-                    style: TextStyle(fontFamily: 'Poppins')),
-                subtitle: Text("Target: $targetScore points",
-                    style: TextStyle(fontFamily: 'Poppins', fontSize: 12)),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _showGameSettingsDialog();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.palette),
-                title: const Text("Change Theme",
-                    style: TextStyle(fontFamily: 'Poppins')),
-                onTap: () {
-                  _safeAction(() {
-                    Navigator.of(context).pop();
-                    _showThemeSelector();
-                  });
-                },
-              ),
-              ListTile(
-                leading:
-                    Icon(soundEnabled ? Icons.volume_up : Icons.volume_off),
-                title: Text(soundEnabled ? "Sound On" : "Sound Off",
-                    style: const TextStyle(fontFamily: 'Poppins')),
-                onTap: () {
-                  _safeAction(() {
-                    setState(() {
-                      soundEnabled = !soundEnabled;
-                    });
-                    _savePreferences();
-                    Navigator.of(context).pop();
-                  });
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _showPlayerNamesDialog() {
-    final TextEditingController leftController = TextEditingController(
-      text: leftPlayerName,
-    );
-    final TextEditingController rightController = TextEditingController(
-      text: rightPlayerName,
-    );
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Player Names",
-              style: TextStyle(fontFamily: 'Poppins')),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Left Player",
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: leftController,
-                decoration: const InputDecoration(
-                  labelText: 'Enter name',
-                  hintText: 'e.g., John',
-                  border: OutlineInputBorder(),
-                ),
-                style: const TextStyle(fontFamily: 'Poppins'),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                "Right Player",
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: rightController,
-                decoration: const InputDecoration(
-                  labelText: 'Enter name',
-                  hintText: 'e.g., Jane',
-                  border: OutlineInputBorder(),
-                ),
-                style: const TextStyle(fontFamily: 'Poppins'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              child:
-                  const Text("Cancel", style: TextStyle(fontFamily: 'Poppins')),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child:
-                  const Text("Save", style: TextStyle(fontFamily: 'Poppins')),
-              onPressed: () {
-                final newLeftName = leftController.text.trim();
-                final newRightName = rightController.text.trim();
-
-                setState(() {
-                  leftPlayerName = newLeftName.isEmpty ? 'Left' : newLeftName;
-                  rightPlayerName =
-                      newRightName.isEmpty ? 'Right' : newRightName;
-                });
-                _savePreferences();
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    ).whenComplete(() {
-      // Guaranteed disposal regardless of how dialog is dismissed
-      leftController.dispose();
-      rightController.dispose();
-    });
-  }
-
-  void _showGameSettingsDialog() {
-    final TextEditingController controller = TextEditingController(
-      text: targetScore.toString(),
-    );
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Game Settings",
-              style: TextStyle(fontFamily: 'Poppins')),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Target Score",
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: controller,
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                ],
-                decoration: InputDecoration(
-                  labelText: 'Enter target score',
-                  hintText: 'e.g., 21, 25, 31',
-                  border: const OutlineInputBorder(),
-                  helperText: 'Minimum: ${AppConstants.minTargetScore}',
-                ),
-                style: const TextStyle(fontFamily: 'Poppins'),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Win at target with 2-point lead, or sudden death at target + ${AppConstants.maxScoreOffset}',
-                style: const TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 11,
-                  color: Colors.grey,
                 ),
               ),
             ],
-          ),
-          actions: [
-            TextButton(
-              child:
-                  const Text("Cancel", style: TextStyle(fontFamily: 'Poppins')),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child:
-                  const Text("Save", style: TextStyle(fontFamily: 'Poppins')),
-              onPressed: () {
-                final newTarget = int.tryParse(controller.text);
-                if (newTarget != null &&
-                    newTarget >= AppConstants.minTargetScore) {
-                  setState(() {
-                    targetScore = newTarget;
-                  });
-                  _savePreferences();
-                  Navigator.of(context).pop();
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Target must be at least ${AppConstants.minTargetScore}',
-                        style: const TextStyle(fontFamily: 'Poppins'),
-                      ),
-                    ),
-                  );
-                }
-              },
-            ),
-          ],
-        );
-      },
-    ).whenComplete(() {
-      // Guaranteed disposal regardless of how dialog is dismissed
-      controller.dispose();
-    });
-  }
-
-  Widget _buildGridItem(Widget child) {
-    return Expanded(
-      child: Padding(
-        padding: AppConstants.gridPadding,
-        child: child,
-      ),
-    );
-  }
-
-  Widget _buildScoreButton({
-    required int score,
-    required VoidCallback onTap,
-    required Color color,
-    required Color textColor,
-    required bool isScaling,
-    required bool isServing,
-    required Color servingColor,
-    required bool isGamePoint,
-    required Color gamePointColor,
-    required bool isLeft,
-  }) {
-    // Use game point color when at game point
-    final effectiveColor = isGamePoint ? gamePointColor : color;
-
-    return Semantics(
-      label: isGamePoint
-          ? 'Score: $score. Game point! Tap to increment'
-          : 'Score: $score. Tap to increment',
-      button: true,
-      child: AnimatedBuilder(
-        animation: _scaleAnimation,
-        builder: (context, child) {
-          final scale = isScaling ? _scaleAnimation.value : 1.0;
-          return Transform.scale(
-            scale: scale,
-            child: AnimatedBuilder(
-              animation: _gamePointAnimation,
-              builder: (context, child) {
-                final glowOpacity = isGamePoint ? _gamePointAnimation.value : 1.0;
-                return Opacity(
-                  opacity: glowOpacity,
-                  child: Material(
-                    elevation: 8,
-                    shadowColor: Colors.black26,
-                    borderRadius: BorderRadius.circular(16),
-                    child: InkWell(
-                      onTap: onTap,
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: effectiveColor,
-                          borderRadius: BorderRadius.circular(16),
-                          border: isServing
-                              ? Border.all(color: servingColor, width: 4)
-                              : null,
-                          boxShadow: isGamePoint
-                              ? [
-                                  BoxShadow(
-                                    color: gamePointColor.withValues(alpha: 0.5),
-                                    blurRadius: 20,
-                                    spreadRadius: 2,
-                                  ),
-                                ]
-                              : null,
-                        ),
-                        child: AnimatedBuilder(
-                          animation: isLeft ? _leftScoreAnimation : _rightScoreAnimation,
-                          builder: (context, child) {
-                            final scoreScale = isLeft ? _leftScoreAnimation.value : _rightScoreAnimation.value;
-                            return Transform.scale(
-                              scale: scoreScale,
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  "$score",
-                                  style: TextStyle(
-                                    fontSize: AppConstants.scoreTextSize,
-                                    color: textColor,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 2,
-                                    fontFamily: 'Poppins',
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildControlButton({
-    required String text,
-    required VoidCallback onTap,
-    required Color color,
-    required Color textColor,
-    String? semanticsLabel,
-    bool enabled = true,
-  }) {
-    return Semantics(
-      label: semanticsLabel ?? text,
-      button: true,
-      enabled: enabled,
-      child: OutlinedButton(
-        onPressed: enabled ? onTap : null,
-        style: OutlinedButton.styleFrom(
-          backgroundColor: enabled
-              ? color.withValues(alpha: 0.1)
-              : color.withValues(alpha: 0.05),
-          side: BorderSide(
-            color: enabled ? color : color.withValues(alpha: 0.3),
-            width: 2,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: EdgeInsets.zero,
-        ),
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: AppConstants.controlTextSize,
-              color: enabled ? textColor : textColor.withValues(alpha: 0.3),
-              fontWeight: FontWeight.w600,
-              fontFamily: 'Poppins',
-            ),
           ),
         ),
       ),

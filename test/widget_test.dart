@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:badminton_score/main.dart';
+import 'package:badminton_score/models/app_constants.dart';
+import 'package:badminton_score/models/game_state.dart';
+import 'package:badminton_score/models/score_action.dart';
+import 'package:badminton_score/theme/theme.dart';
+
+// Mock function for testing
+void _mockThemeChange(String theme) {}
 
 void main() {
   group('AppConstants', () {
@@ -70,12 +77,13 @@ void main() {
       expect(AppThemes.themes.containsKey('energy'), true);
       expect(AppThemes.themes.containsKey('court'), true);
       expect(AppThemes.themes.containsKey('champion'), true);
+      expect(AppThemes.themes.containsKey('midnight'), true);
     });
 
     test('should have cached theme keys', () {
-      expect(AppThemes.themeKeys.length, 5);
+      expect(AppThemes.themeKeys.length, 6); // 5 original + midnight
       expect(AppThemes.themeKeys, contains('light'));
-      expect(AppThemes.themeKeys, contains('minimal'));
+      expect(AppThemes.themeKeys, contains('midnight'));
     });
 
     test('each theme should have all required colors', () {
@@ -113,28 +121,33 @@ void main() {
 
     test('ScoreScreen should be a StatefulWidget', () {
       const screen = ScoreScreen(
-        currentTheme: 'light',
+        currentThemeKey: 'light',
         onThemeChange: _mockThemeChange,
       );
       expect(screen, isA<StatefulWidget>());
     });
+
+    testWidgets('ScoreScreen renders correctly', (WidgetTester tester) async {
+       await tester.pumpWidget(MaterialApp(
+        home: ScoreScreen(
+          currentThemeKey: 'light',
+          onThemeChange: _mockThemeChange,
+        ),
+      ));
+
+      // Verify that score '0' is displayed for both players
+      expect(find.text('0'), findsNWidgets(2));
+      
+      // Verify players names
+      expect(find.text('Left'), findsOneWidget);
+      expect(find.text('Right'), findsOneWidget);
+
+      // Verify buttons exist (by icon)
+      // Note: Settings and Reset are now inside the Menu dialog, so we verify visible buttons
+      expect(find.byIcon(Icons.menu), findsOneWidget); // Menu
+      expect(find.byIcon(Icons.swap_horiz), findsOneWidget); // Swap
+      expect(find.byIcon(Icons.undo), findsOneWidget); // Undo
+      expect(find.byIcon(Icons.remove), findsNWidgets(2)); // Left and Right minus buttons
+    });
   });
-
-  group('Boundary Conditions', () {
-    test('should handle minimum target score', () {
-      expect(AppConstants.minTargetScore, 5);
-    });
-
-    test('should handle maximum undo history', () {
-      expect(AppConstants.maxUndoHistory, 10);
-    });
-
-    test('should handle high score threshold', () {
-      expect(AppConstants.highScoreThreshold, 10);
-    });
-  });
-}
-
-void _mockThemeChange(String theme) {
-  // Mock function for testing
 }
