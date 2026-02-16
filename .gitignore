@@ -18,10 +18,8 @@ migrate_working_dir/
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# VS Code
+.vscode/
 
 # Flutter/Dart/Pub related
 **/doc/api/
@@ -46,6 +44,15 @@ app.*.map.json
 
 # Distribution folder (built by CI/CD)
 /dist/
-.claude*
-_bmad*
+
+# AI/agent tooling
 .agent*
+.claude*
+.codex*
+_bmad*
+CLAUDE.md
+
+# Keep workflows, ignore other GitHub metadata
+.github/*
+!.github/workflows/
+!.github/workflows/**
