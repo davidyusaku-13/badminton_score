@@ -36,8 +36,8 @@ class ScoreCard extends StatelessWidget {
       child: GlassContainer(
         borderRadius: BorderRadius.circular(24),
         color: isWinner 
-            ? theme.gamePoint.withOpacity(0.2) 
-            : theme.surface.withOpacity(0.3),
+            ? theme.gamePoint.withValues(alpha: 0.2) 
+            : theme.surface.withValues(alpha: 0.3),
         border: Border.all(
           color: isServing ? theme.accent : Colors.white12,
           width: isServing ? 3 : 1,
@@ -90,7 +90,7 @@ class ScoreCard extends StatelessWidget {
                         Shadow(
                           blurRadius: 20,
                           color: isWinner 
-                              ? theme.gamePoint.withOpacity(0.5) 
+                              ? theme.gamePoint.withValues(alpha: 0.5) 
                               : Colors.transparent,
                         ),
                       ],

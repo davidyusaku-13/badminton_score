@@ -101,7 +101,7 @@ class MatchHistoryDialog extends StatelessWidget {
                 child: Center(
                   child: Column(
                     children: [
-                      Icon(Icons.history, size: 48, color: theme.textSecondary.withOpacity(0.5)),
+                      Icon(Icons.history, size: 48, color: theme.textSecondary.withValues(alpha: 0.5)),
                       const SizedBox(height: 8),
                       Text(
                         "No matches yet",
@@ -110,7 +110,7 @@ class MatchHistoryDialog extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         "Completed games will appear here",
-                        style: TextStyle(color: theme.textSecondary.withOpacity(0.7), fontSize: 12),
+                        style: TextStyle(color: theme.textSecondary.withValues(alpha: 0.7), fontSize: 12),
                       ),
                     ],
                   ),
@@ -130,7 +130,7 @@ class MatchHistoryDialog extends StatelessWidget {
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: theme.background.withOpacity(0.5),
+                        color: theme.background.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: theme.glassBorder),
                       ),
@@ -173,8 +173,8 @@ class MatchHistoryDialog extends StatelessWidget {
                                 horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
                               color: isLeftWinner 
-                                  ? Colors.green.withOpacity(0.2) 
-                                  : Colors.orange.withOpacity(0.2),
+                                  ? Colors.green.withValues(alpha: 0.2) 
+                                  : Colors.orange.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(

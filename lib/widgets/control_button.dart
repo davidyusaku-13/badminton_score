@@ -22,7 +22,7 @@ class ControlButton extends StatelessWidget {
       onTap: onTap,
       child: GlassContainer(
         borderRadius: BorderRadius.circular(16),
-        color: theme.surface.withOpacity(0.2),
+        color: theme.surface.withValues(alpha: 0.2),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

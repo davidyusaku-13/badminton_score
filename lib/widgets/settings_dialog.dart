@@ -70,7 +70,7 @@ class SettingsDialog extends StatelessWidget {
               Switch(
                 value: soundEnabled,
                 onChanged: onSoundChanged,
-                activeColor: theme.primary,
+                activeThumbColor: theme.primary,
               ),
             ),
             const SizedBox(height: 24),

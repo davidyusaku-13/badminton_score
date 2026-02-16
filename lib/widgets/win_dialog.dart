@@ -65,7 +65,7 @@ class WinDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
-                color: theme.background.withOpacity(0.5),
+                color: theme.background.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: theme.glassBorder),
               ),
