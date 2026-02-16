@@ -70,7 +70,12 @@ class SettingsDialog extends StatelessWidget {
               Switch(
                 value: soundEnabled,
                 onChanged: onSoundChanged,
-                activeThumbColor: theme.primary,
+                thumbColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return theme.primary;
+                  }
+                  return null;
+                }),
               ),
             ),
             const SizedBox(height: 24),
