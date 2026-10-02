@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../game/game_controller.dart';
 import '../theme/app_theme.dart';
 import 'custom_color_dialog.dart';
-
-/// Default settings values, shared with the score screen.
-const String kDefaultLeftName = 'Player 1';
-const String kDefaultRightName = 'Player 2';
-const double kDefaultScoreSize = 14;
-const bool kDefaultSoundEnabled = true;
 
 /// Preset accent colors pickable per player side.
 const List<Color> kAccentChoices = [

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:segment_display/segment_display.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:badminton_score/main.dart';
 import 'package:badminton_score/theme/app_theme.dart';
@@ -14,6 +15,7 @@ List<String> displayedScores(WidgetTester tester) {
 }
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
   testWidgets('Score scaffold renders midnight theme', (
     WidgetTester tester,
   ) async {
@@ -297,5 +299,58 @@ void main() {
     for (final display in displays) {
       expect(display.size, 14.0);
     }
+  });
+
+  testWidgets('Loads persisted settings on startup', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({
+      'leftName': 'Andi',
+      'leftColor': const Color(0xFFFB923C).toARGB32(),
+      'scoreSize': 20.0,
+      'soundEnabled': false,
+    });
+
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+
+    expect(find.text('ANDI'), findsOneWidget);
+    final displays = tester
+        .widgetList<SevenSegmentDisplay>(find.byType(SevenSegmentDisplay))
+        .toList();
+    expect(
+      (displays[0].segmentStyle as DefaultSegmentStyle).enabledColor,
+      const Color(0xFFFB923C),
+    );
+    for (final display in displays) {
+      expect(display.size, 20.0);
+    }
+
+    await tester.tap(find.byIcon(LucideIcons.settings));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<SwitchListTile>(find.byKey(const Key('settings-sound'))).value,
+      isFalse,
+    );
+  });
+
+  testWidgets('Undo button looks disabled with empty history', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+
+    Opacity undoOpacity() => tester.widget<Opacity>(
+      find.ancestor(
+        of: find.byIcon(LucideIcons.undo2),
+        matching: find.byType(Opacity),
+      ),
+    );
+
+    expect(undoOpacity().opacity, 0.4);
+
+    await tester.tap(find.byKey(const Key('leftScorePanel')));
+    await tester.pump();
+    expect(undoOpacity().opacity, 1.0);
   });
 }
