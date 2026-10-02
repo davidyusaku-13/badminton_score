@@ -334,6 +334,30 @@ void main() {
     );
   });
 
+  testWidgets('Content avoids display cutout areas', (
+    WidgetTester tester,
+  ) async {
+    // Simulate a camera cutout on the left edge (landscape).
+    // SafeArea follows MediaQuery padding, so set view padding (not viewPadding).
+    // View padding is in physical pixels: fix devicePixelRatio to 1 so the
+    // 48px cutout maps 1:1 to logical pixels.
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.padding = const FakeViewPadding(left: 48);
+    addTearDown(() {
+      tester.view.resetDevicePixelRatio();
+      tester.view.resetPadding();
+    });
+
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+
+    final panel = tester.getTopLeft(find.byKey(const Key('leftScorePanel')));
+    expect(panel.dx, greaterThanOrEqualTo(48.0));
+
+    final minus = tester.getTopLeft(find.byIcon(LucideIcons.minus).first);
+    expect(minus.dx, greaterThanOrEqualTo(48.0));
+  });
+
   testWidgets('Undo button looks disabled with empty history', (
     WidgetTester tester,
   ) async {
