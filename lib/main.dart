@@ -1,13 +1,19 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:segment_display/segment_display.dart';
 
 import 'audio/beep.dart';
 import 'theme/app_theme.dart';
+import 'widgets/settings_dialog.dart';
 
 void main() {
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]).then((_) => runApp(const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -33,6 +39,14 @@ class ScoreScreen extends StatefulWidget {
 class _ScoreScreenState extends State<ScoreScreen> {
   int leftScore = 0;
   int rightScore = 0;
+  String leftPlayerName = 'Player 1';
+  String rightPlayerName = 'Player 2';
+  Color leftAccent = AppTheme.current.accent;
+  Color rightAccent = AppTheme.current.accentSecondary;
+  double scoreSize = 14;
+
+  /// Previous (left, right) scores for undo. Capped to avoid unbounded growth.
+  final List<(int, int)> _history = [];
 
   late final AudioPlayer _player;
   late final Source _incrementSource;
@@ -57,7 +71,15 @@ class _ScoreScreenState extends State<ScoreScreen> {
     }
   }
 
+  void _pushHistory() {
+    _history.add((leftScore, rightScore));
+    if (_history.length > 100) {
+      _history.removeAt(0);
+    }
+  }
+
   void _increment(bool isLeft) {
+    _pushHistory();
     setState(() {
       if (isLeft) {
         leftScore++;
@@ -65,6 +87,7 @@ class _ScoreScreenState extends State<ScoreScreen> {
         rightScore++;
       }
     });
+    HapticFeedback.selectionClick();
     _playSource(_incrementSource);
   }
 
@@ -73,6 +96,7 @@ class _ScoreScreenState extends State<ScoreScreen> {
     if (currentScore <= 0) {
       return;
     }
+    _pushHistory();
     setState(() {
       if (isLeft) {
         leftScore--;
@@ -80,15 +104,84 @@ class _ScoreScreenState extends State<ScoreScreen> {
         rightScore--;
       }
     });
+    HapticFeedback.lightImpact();
     _playSource(_decrementSource);
+  }
+
+  void _undo() {
+    if (_history.isEmpty) {
+      return;
+    }
+    final previous = _history.removeLast();
+    setState(() {
+      leftScore = previous.$1;
+      rightScore = previous.$2;
+    });
+    HapticFeedback.lightImpact();
+  }
+
+  void _confirmReset() {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Reset game?'),
+        content: const Text('Both scores will return to 0.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              _reset();
+            },
+            child: const Text('Reset'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _reset() {
+    _pushHistory();
+    setState(() {
+      leftScore = 0;
+      rightScore = 0;
+    });
+    HapticFeedback.mediumImpact();
   }
 
   void _openSettings() {
     showDialog(
       context: context,
-      builder: (context) => const AlertDialog(
-        title: Text('Settings'),
-        content: Text('TODO: settings content'),
+      builder: (context) => SettingsDialog(
+        leftName: leftPlayerName,
+        rightName: rightPlayerName,
+        leftColor: leftAccent,
+        rightColor: rightAccent,
+        scoreSize: scoreSize,
+        onSave: ({
+          required String leftName,
+          required String rightName,
+          required Color leftColor,
+          required Color rightColor,
+          required double scoreSize,
+        }) {
+          setState(() {
+            final trimmedLeft = leftName.trim();
+            final trimmedRight = rightName.trim();
+            if (trimmedLeft.isNotEmpty) {
+              leftPlayerName = trimmedLeft;
+            }
+            if (trimmedRight.isNotEmpty) {
+              rightPlayerName = trimmedRight;
+            }
+            leftAccent = leftColor;
+            rightAccent = rightColor;
+            this.scoreSize = scoreSize;
+          });
+        },
       ),
     );
   }
@@ -112,7 +205,10 @@ class _ScoreScreenState extends State<ScoreScreen> {
                   Expanded(
                     child: _ScorePanel(
                       key: const Key('leftScorePanel'),
+                      playerName: leftPlayerName,
                       score: leftScore,
+                      accent: leftAccent,
+                      displaySize: scoreSize,
                       palette: palette,
                       onTap: () => _increment(true),
                     ),
@@ -125,7 +221,10 @@ class _ScoreScreenState extends State<ScoreScreen> {
                   Expanded(
                     child: _ScorePanel(
                       key: const Key('rightScorePanel'),
+                      playerName: rightPlayerName,
                       score: rightScore,
+                      accent: rightAccent,
+                      displaySize: scoreSize,
                       palette: palette,
                       onTap: () => _increment(false),
                     ),
@@ -134,7 +233,7 @@ class _ScoreScreenState extends State<ScoreScreen> {
               ),
             ),
             Divider(height: 1, thickness: 1, color: palette.divider),
-            // Row 2: minus - settings - minus.
+            // Row 2: minus - undo - settings - reset - minus.
             // Minus buttons expand to fill the row for a bigger tap target.
             Row(
               children: [
@@ -148,11 +247,23 @@ class _ScoreScreenState extends State<ScoreScreen> {
                   ),
                 ),
                 _ControlButton(
+                  icon: LucideIcons.undo2,
+                  label: 'Undo last change',
+                  palette: palette,
+                  onTap: _undo,
+                ),
+                _ControlButton(
                   icon: LucideIcons.settings,
                   label: 'Open settings',
                   palette: palette,
                   highlighted: true,
                   onTap: _openSettings,
+                ),
+                _ControlButton(
+                  icon: LucideIcons.rotateCcw,
+                  label: 'Reset game',
+                  palette: palette,
+                  onTap: _confirmReset,
                 ),
                 Expanded(
                   child: _ControlButton(
@@ -173,13 +284,19 @@ class _ScoreScreenState extends State<ScoreScreen> {
 }
 
 class _ScorePanel extends StatelessWidget {
+  final String playerName;
   final int score;
+  final Color accent;
+  final double displaySize;
   final AppPalette palette;
   final VoidCallback onTap;
 
   const _ScorePanel({
     super.key,
+    required this.playerName,
     required this.score,
+    required this.accent,
+    required this.displaySize,
     required this.palette,
     required this.onTap,
   });
@@ -189,23 +306,43 @@ class _ScorePanel extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: FittedBox(
-            fit: BoxFit.contain,
-            child: SevenSegmentDisplay(
-              value: '$score',
-              size: 14,
-              characterSpacing: 12,
-              backgroundColor: Colors.transparent,
-              segmentStyle: DefaultSegmentStyle(
-                enabledColor: palette.accent,
-                disabledColor: Colors.transparent,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: Text(
+              playerName.toUpperCase(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: accent,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 2,
               ),
             ),
           ),
-        ),
+          Expanded(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  child: SevenSegmentDisplay(
+                    value: '$score',
+                    size: displaySize,
+                    characterSpacing: 12,
+                    backgroundColor: Colors.transparent,
+                    segmentStyle: DefaultSegmentStyle(
+                      enabledColor: accent,
+                      disabledColor: Colors.transparent,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -242,10 +379,9 @@ class _ControlButton extends StatelessWidget {
           child: Container(
             width: expanded ? double.infinity : null,
             alignment: Alignment.center,
-            padding: EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: expanded ? 24 : 16,
-            ),
+            // Same vertical padding for every button so the whole
+            // control row shares one full tap height.
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
             child: Icon(icon, size: expanded ? 36 : 28, color: color),
           ),
         ),

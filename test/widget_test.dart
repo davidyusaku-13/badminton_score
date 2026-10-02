@@ -24,13 +24,17 @@ void main() {
     expect(scaffold.backgroundColor, isNull); // comes from ThemeData
     expect(AppTheme.current.background, const Color(0xFF09090B));
 
-    // Row 1: two seven-segment score displays showing 0.
+    // Row 1: player names and two seven-segment score displays showing 0.
+    expect(find.text('PLAYER 1'), findsOneWidget);
+    expect(find.text('PLAYER 2'), findsOneWidget);
     expect(find.byType(SevenSegmentDisplay), findsNWidgets(2));
     expect(displayedScores(tester), ['0', '0']);
 
-    // Row 2: two minus buttons and one settings button.
+    // Row 2: two minus buttons plus undo, settings and reset.
     expect(find.byIcon(LucideIcons.minus), findsNWidgets(2));
+    expect(find.byIcon(LucideIcons.undo2), findsOneWidget);
     expect(find.byIcon(LucideIcons.settings), findsOneWidget);
+    expect(find.byIcon(LucideIcons.rotateCcw), findsOneWidget);
   });
 
   testWidgets('Tapping a score panel increments it', (
@@ -53,6 +57,153 @@ void main() {
 
     await tester.tap(find.byIcon(LucideIcons.minus).last);
     await tester.pump();
+    expect(displayedScores(tester), ['0', '0']);
+  });
+
+  testWidgets('Undo restores the previous score', (WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp());
+
+    await tester.tap(find.byKey(const Key('leftScorePanel')));
+    await tester.pump();
+    expect(displayedScores(tester), ['1', '0']);
+
+    await tester.tap(find.byIcon(LucideIcons.undo2));
+    await tester.pump();
+    expect(displayedScores(tester), ['0', '0']);
+  });
+
+  testWidgets('Settings can rename a player', (WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp());
+
+    await tester.tap(find.byIcon(LucideIcons.settings));
+    await tester.pumpAndSettle();
+    expect(find.text('Settings'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('settings-left-name')),
+      'Andi',
+    );
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ANDI'), findsOneWidget);
+    expect(find.text('PLAYER 1'), findsNothing);
+  });
+
+  testWidgets('Settings can recolor a side', (WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp());
+
+    await tester.tap(find.byIcon(LucideIcons.settings));
+    await tester.pumpAndSettle();
+
+    // Orange is index 2 in kAccentChoices.
+    await tester.tap(find.byKey(const Key('settings-left-color-2')));
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    final displays = tester
+        .widgetList<SevenSegmentDisplay>(find.byType(SevenSegmentDisplay))
+        .toList();
+    expect(
+      (displays[0].segmentStyle as DefaultSegmentStyle).enabledColor,
+      const Color(0xFFFB923C),
+    );
+  });
+
+  testWidgets('Settings can change score size', (WidgetTester tester) async {
+    // Tall viewport so the whole dialog content is visible without scrolling.
+    tester.view.physicalSize = const Size(800, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(const MyApp());
+
+    await tester.tap(find.byIcon(LucideIcons.settings));
+    await tester.pumpAndSettle();
+
+    // Drag the slider to maximum (24).
+    await tester.drag(
+      find.byKey(const Key('settings-score-size')),
+      const Offset(500, 0),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    final displays = tester
+        .widgetList<SevenSegmentDisplay>(find.byType(SevenSegmentDisplay))
+        .toList();
+    for (final display in displays) {
+      expect(display.size, 24.0);
+    }
+  });
+
+  testWidgets('Custom color swatch opens the full palette', (
+    WidgetTester tester,
+  ) async {
+    // Tall viewport so the whole palette dialog is visible without scrolling.
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(const MyApp());
+
+    await tester.tap(find.byIcon(LucideIcons.settings));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('settings-left-color-custom')));
+    await tester.pumpAndSettle();
+    expect(find.text('Pick a color'), findsOneWidget);
+
+    // Red hue, shade 500.
+    await tester.tap(find.byKey(const Key('custom-hue-0')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('custom-shade-5')));
+    await tester.pump();
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    final displays = tester
+        .widgetList<SevenSegmentDisplay>(find.byType(SevenSegmentDisplay))
+        .toList();
+    expect(
+      (displays[0].segmentStyle as DefaultSegmentStyle).enabledColor,
+      Colors.red[500],
+    );
+  });
+
+  testWidgets('Reset asks for confirmation before clearing', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const MyApp());
+
+    await tester.tap(find.byKey(const Key('leftScorePanel')));
+    await tester.pump();
+    expect(displayedScores(tester), ['1', '0']);
+
+    await tester.tap(find.byIcon(LucideIcons.rotateCcw));
+    await tester.pumpAndSettle();
+    expect(find.text('Reset game?'), findsOneWidget);
+
+    // Cancel keeps the score.
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(displayedScores(tester), ['1', '0']);
+
+    // Confirm clears the score.
+    await tester.tap(find.byIcon(LucideIcons.rotateCcw));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Reset'));
+    await tester.pumpAndSettle();
     expect(displayedScores(tester), ['0', '0']);
   });
 }

@@ -12,6 +12,7 @@ class AppPalette {
   final Color textPrimary;
   final Color textSecondary;
   final Color accent;
+  final Color accentSecondary;
   final Color divider;
 
   const AppPalette({
@@ -21,6 +22,7 @@ class AppPalette {
     required this.textPrimary,
     required this.textSecondary,
     required this.accent,
+    required this.accentSecondary,
     required this.divider,
   });
 }
@@ -33,6 +35,7 @@ class AppTheme {
     textPrimary: Colors.white,
     textSecondary: Color(0xFFA1A1AA),
     accent: Color(0xFFA3E635),
+    accentSecondary: Color(0xFF22D3EE),
     divider: Color(0xFF27272A),
   );
 
