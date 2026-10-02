@@ -39,11 +39,12 @@ class ScoreScreen extends StatefulWidget {
 class _ScoreScreenState extends State<ScoreScreen> {
   int leftScore = 0;
   int rightScore = 0;
-  String leftPlayerName = 'Player 1';
-  String rightPlayerName = 'Player 2';
+  String leftPlayerName = kDefaultLeftName;
+  String rightPlayerName = kDefaultRightName;
   Color leftAccent = AppTheme.current.accent;
   Color rightAccent = AppTheme.current.accentSecondary;
-  double scoreSize = 14;
+  double scoreSize = kDefaultScoreSize;
+  bool soundEnabled = kDefaultSoundEnabled;
 
   /// Previous (left, right) scores for undo. Capped to avoid unbounded growth.
   final List<(int, int)> _history = [];
@@ -63,6 +64,9 @@ class _ScoreScreenState extends State<ScoreScreen> {
   }
 
   Future<void> _playSource(Source source) async {
+    if (!soundEnabled) {
+      return;
+    }
     try {
       await _player.stop();
       await _player.play(source);
@@ -161,6 +165,8 @@ class _ScoreScreenState extends State<ScoreScreen> {
         leftColor: leftAccent,
         rightColor: rightAccent,
         scoreSize: scoreSize,
+        soundEnabled: soundEnabled,
+        onSoundChanged: (value) => setState(() => soundEnabled = value),
         onSave: ({
           required String leftName,
           required String rightName,

@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../theme/app_theme.dart';
 import 'custom_color_dialog.dart';
+
+/// Default settings values, shared with the score screen.
+const String kDefaultLeftName = 'Player 1';
+const String kDefaultRightName = 'Player 2';
+const double kDefaultScoreSize = 14;
+const bool kDefaultSoundEnabled = true;
 
 /// Preset accent colors pickable per player side.
 const List<Color> kAccentChoices = [
@@ -22,6 +29,7 @@ class SettingsDialog extends StatefulWidget {
   final Color leftColor;
   final Color rightColor;
   final double scoreSize;
+  final bool soundEnabled;
   final void Function({
     required String leftName,
     required String rightName,
@@ -30,6 +38,7 @@ class SettingsDialog extends StatefulWidget {
     required double scoreSize,
   })
   onSave;
+  final ValueChanged<bool> onSoundChanged;
 
   const SettingsDialog({
     super.key,
@@ -38,7 +47,9 @@ class SettingsDialog extends StatefulWidget {
     required this.leftColor,
     required this.rightColor,
     required this.scoreSize,
+    required this.soundEnabled,
     required this.onSave,
+    required this.onSoundChanged,
   });
 
   @override
@@ -53,6 +64,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
   late Color _leftCustom;
   late Color _rightCustom;
   late double _scoreSize;
+  late bool _soundEnabled;
 
   @override
   void initState() {
@@ -64,6 +76,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
     _leftCustom = widget.leftColor;
     _rightCustom = widget.rightColor;
     _scoreSize = widget.scoreSize;
+    _soundEnabled = widget.soundEnabled;
   }
 
   int _indexOf(Color color) {
@@ -93,8 +106,22 @@ class _SettingsDialogState extends State<SettingsDialog> {
     Navigator.of(context).pop();
   }
 
-  Future<void> _pickCustomColor({required bool isLeft}) async {
-    final current = isLeft ? _leftCustom : _rightCustom;
+  void _resetToDefaults() {
+    _leftController.text = kDefaultLeftName;
+    _rightController.text = kDefaultRightName;
+    setState(() {
+      _leftColorIndex = _indexOf(AppTheme.current.accent);
+      _rightColorIndex = _indexOf(AppTheme.current.accentSecondary);
+      _leftCustom = AppTheme.current.accent;
+      _rightCustom = AppTheme.current.accentSecondary;
+      _scoreSize = kDefaultScoreSize;
+      _soundEnabled = kDefaultSoundEnabled;
+    });
+    // Sound applies live, so restore it immediately like the switch does.
+    widget.onSoundChanged(kDefaultSoundEnabled);
+  }
+
+  Future<void> _pickCustomColor({required bool isLeft}) async {    final current = isLeft ? _leftCustom : _rightCustom;
     final picked = await showDialog<Color>(
       context: context,
       builder: (context) => CustomColorDialog(initialColor: current),
@@ -157,10 +184,27 @@ class _SettingsDialogState extends State<SettingsDialog> {
               onChanged: (value) => setState(() => _scoreSize = value),
             ),
             Text('Size: ${_scoreSize.round()}'),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              key: const Key('settings-sound'),
+              title: const Text('Sound'),
+              value: _soundEnabled,
+              onChanged: (value) {
+                setState(() => _soundEnabled = value);
+                widget.onSoundChanged(value);
+              },
+            ),
           ],
         ),
       ),
       actions: [
+        TextButton(
+          onPressed: _resetToDefaults,
+          child: Text(
+            'Reset to defaults',
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+        ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),

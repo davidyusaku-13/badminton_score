@@ -206,4 +206,96 @@ void main() {
     await tester.pumpAndSettle();
     expect(displayedScores(tester), ['0', '0']);
   });
+
+  testWidgets('Sound can be muted from settings', (WidgetTester tester) async {
+    // Tall viewport so the whole settings content is visible without scrolling.
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(const MyApp());
+
+    await tester.tap(find.byIcon(LucideIcons.settings));
+    await tester.pumpAndSettle();
+
+    final soundSwitch = find.byKey(const Key('settings-sound'));
+    expect(tester.widget<SwitchListTile>(soundSwitch).value, isTrue);
+
+    await tester.tap(soundSwitch);
+    await tester.pumpAndSettle();
+    expect(tester.widget<SwitchListTile>(soundSwitch).value, isFalse);
+
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    // Scoring still works while muted.
+    await tester.tap(find.byKey(const Key('leftScorePanel')));
+    await tester.pump();
+    expect(displayedScores(tester), ['1', '0']);
+  });
+
+  testWidgets('Reset to defaults restores factory settings', (
+    WidgetTester tester,
+  ) async {
+    // Tall viewport so the whole settings content is visible without scrolling.
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(const MyApp());
+
+    // Change everything away from defaults.
+    await tester.tap(find.byIcon(LucideIcons.settings));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('settings-left-name')),
+      'Andi',
+    );
+    await tester.tap(find.byKey(const Key('settings-left-color-2')));
+    await tester.drag(
+      find.byKey(const Key('settings-score-size')),
+      const Offset(500, 0),
+    );
+    await tester.tap(find.byKey(const Key('settings-sound')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Reset to defaults'));
+    await tester.pumpAndSettle();
+
+    // Dialog shows defaults again.
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('settings-left-name')))
+          .controller
+          ?.text,
+      'Player 1',
+    );
+    expect(find.text('Size: 14'), findsOneWidget);
+    expect(
+      tester.widget<SwitchListTile>(find.byKey(const Key('settings-sound'))).value,
+      isTrue,
+    );
+
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    // Main screen is back to defaults.
+    expect(find.text('PLAYER 1'), findsOneWidget);
+    final displays = tester
+        .widgetList<SevenSegmentDisplay>(find.byType(SevenSegmentDisplay))
+        .toList();
+    expect(
+      (displays[0].segmentStyle as DefaultSegmentStyle).enabledColor,
+      const Color(0xFFA3E635),
+    );
+    for (final display in displays) {
+      expect(display.size, 14.0);
+    }
+  });
 }
