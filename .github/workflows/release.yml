@@ -70,10 +70,33 @@ jobs:
           echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
           echo "New version: $NEW_VERSION (tag: $NEW_TAG)"
 
+  test:
+    name: Analyze and Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
   build-android:
     name: Build Android APK
     runs-on: ubuntu-latest
-    needs: version
+    needs: [version, test]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -87,7 +110,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.0'
+          flutter-version: '3.47.6'
           channel: 'stable'
           cache: true
 
@@ -120,7 +143,7 @@ jobs:
   build-ios:
     name: Build iOS (Unsigned)
     runs-on: macos-latest
-    needs: version
+    needs: [version, test]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -128,7 +151,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.0'
+          flutter-version: '3.47.6'
           channel: 'stable'
           cache: true
 
