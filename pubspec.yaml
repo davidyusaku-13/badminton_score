@@ -11,39 +11,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  audioplayers: ^6.4.0
-  wakelock_plus: ^1.2.5
-  shared_preferences: ^2.3.3
-  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
-  flutter_native_splash: ^2.3.7
-  flutter_launcher_icons: 0.14.3
-
-flutter_launcher_icons:
-  android: true
-  ios: true
-  image_path: "assets/splash.png"
-  remove_alpha_ios: true
-
-# Splash screen configuration (root level)
-flutter_native_splash:
-  color: "#4CAF50" # Green color matching your app
-  image: assets/splash.png
+  flutter_lints: ^6.0.0
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/beep.mp3
-    - assets/splash.png
-  
-  fonts:
-    - family: Poppins
-      fonts:
-        - asset: assets/fonts/Poppins-Regular.ttf
-          weight: 400
-        - asset: assets/fonts/Poppins-SemiBold.ttf
-          weight: 600
